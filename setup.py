@@ -18,7 +18,7 @@ setup(
         "Development Status :: 3 - Alpha",
         "Topic :: Text Processing :: Filters",
         "Topic :: Utilities",
-        "License :: OSI Approved :: BSD License",
+        "License :: OSI Approved :: MIT License",
     ],
     packages = find_packages("src"),
     package_dir = {'':'src'},

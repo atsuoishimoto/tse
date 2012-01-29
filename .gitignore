@@ -4,4 +4,4 @@
 *.so
 *.pyc
 *.egg-info
-
+dist
