@@ -10,7 +10,7 @@ setup(
     author = "Atsuo Ishimoto",
     author_email = "ishimoto@gembook.org",
     description = "pss is an input stream editor in Python.",
-    license = "BSD",
+    license = "MIT",
     keywords = "text filter",
     url = "http://packages.python.org/an_example_pypi_project",
     long_description=read('README'),
