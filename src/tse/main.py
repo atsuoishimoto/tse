@@ -18,7 +18,7 @@ class Env:
         if begin:
             self.begincode = self.build_code("\n".join(begin))
         if end:
-            self.endcode = self.build_code(end)
+            self.endcode = self.build_code("\n".join(end))
         if input_encoding:
             self.inputenc = input_encoding
         if output_encoding:
