@@ -2,8 +2,8 @@
 
 import sys, argparse, re, locale, ast, codecs, fileinput
 
-SHORTAPPNAME = "pss"
-LOGAPPNAME = "Input Stream Editor in Python"
+SHORTAPPNAME = "tse"
+LOGAPPNAME = "Text Stream Editor in Python"
 
 class Env:
     actions = ()
@@ -40,7 +40,7 @@ class Env:
                     node.s = s.encode(enc)
                 return node
 
-        filename = "<pss>"
+        filename = "<tse>"
         src = unicode(code, enc)
         exprs = ast.parse(code, filename)
         _Transform().visit(exprs)

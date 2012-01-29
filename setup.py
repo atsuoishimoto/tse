@@ -5,14 +5,14 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name = "pss",
+    name = "tse",
     version = "0.0.1",
     author = "Atsuo Ishimoto",
     author_email = "ishimoto@gembook.org",
-    description = "pss is an input stream editor in Python.",
+    description = "tse is an input stream editor in Python.",
     license = "MIT",
     keywords = "text filter",
-    url = "http://packages.python.org/an_example_pypi_project",
+    url = "https://github.com/atsuoishimoto/tse",
     long_description=read('README'),
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -23,7 +23,7 @@ setup(
     packages = find_packages("src"),
     package_dir = {'':'src'},
     entry_points = {
-        'console_scripts': ['pss = pss.main:main']
+        'console_scripts': ['tse = tse.main:main']
     },
     install_requires=["argparse"],
 )

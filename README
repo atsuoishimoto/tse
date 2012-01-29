@@ -1,25 +1,25 @@
-pss - Python Stream Scripting
+tse - Python Stream Scripting
 =============================
 
-pss processes text input stream with Python expressions. Like AWK, pss command line option is a series of pair of condition and action:
+tse processes text input stream with Python expressions. Like AWK, tse command line option is a series of pair of condition and action:
 
-    pss -a COND1 ACTION1 -a COND2 ACTION2 
+    tse -a COND1 ACTION1 -a COND2 ACTION2 
 
 For example, to find lines starts with 'abc' ::
 
-    pss -a "^abc" "print L"
+    tse -a "^abc" "print L"
 
 to find line contains URL ::
 
-    pss -a "http://\\S+" "print S0"  -a "mailto://\\S+" "print S0" 
+    tse -a "http://\\S+" "print S0"  -a "mailto://\\S+" "print S0" 
 
 to convert upper case ::
 
-    pss -a ".*" "print L.upper()"
+    tse -a ".*" "print L.upper()"
 
 ::
 
-    usage: pss-script.py [-h] [--action ACTION ACTION] [--begin BEGIN]
+    usage: tse-script.py [-h] [--action ACTION ACTION] [--begin BEGIN]
                           [--end END] [--input-encoding INPUT_ENCODING]
                           [--output-encoding OUTPUT_ENCODING] [--module MODULE]
                           [--module-star MODULE_STAR]
@@ -75,17 +75,17 @@ Examples
 
 Print sum of numeric characters in an each line of input stream::
 
-    pss -a "\d+" "print(sum(int(s) for s in re.findall(r"\d+", L)))" \
+    tse -a "\d+" "print(sum(int(s) for s in re.findall(r"\d+", L)))" \
          -a "=" "print('done'); sys.exit(0)"
 
 
 Sum all numeric characters in all lines::
 
-    pss -b "all=0" \
+    tse -b "all=0" \
          -a "\d+" "all+=sum(int(s) for s in re.findall(r"\d+", L)))" \
          -e "=" "print(all); sys.exit(0)"
 
 Find all extention parts in current directory::
 
-    find . | pss -a ".*" "print path.splitext(L)[1]"
+    find . | tse -a ".*" "print path.splitext(L)[1]"
 
