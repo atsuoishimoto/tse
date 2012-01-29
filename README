@@ -1,0 +1,91 @@
+pss - Python Stream Scripting
+=============================
+
+pss processes text input stream with Python expressions. Like AWK, pss command line option is a series of pair of condition and action:
+
+    pss -a COND1 ACTION1 -a COND2 ACTION2 
+
+For example, to find lines starts with 'abc' ::
+
+    pss -a "^abc" "print L"
+
+to find line contains URL ::
+
+    pss -a "http://\\S+" "print S0"  -a "mailto://\\S+" "print S0" 
+
+to convert upper case ::
+
+    pss -a ".*" "print L.upper()"
+
+::
+
+    usage: pss-script.py [-h] [--action ACTION ACTION] [--begin BEGIN]
+                          [--end END] [--input-encoding INPUT_ENCODING]
+                          [--output-encoding OUTPUT_ENCODING] [--module MODULE]
+                          [--module-star MODULE_STAR]
+                          [files [files ...]]
+    
+    Input Stream Editor in Python
+    
+    positional arguments:
+      files                 file names to be read. if files are omitted, stdin
+                            would be used.
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+      --action ACTION ACTION, -a ACTION ACTION
+                            pair of condition and action.
+      --begin BEGIN, -b BEGIN
+                            action invoked before input files have been read.
+      --end END, -e END     action invoked after input files have been exhausted.
+      --input-encoding INPUT_ENCODING, -ie INPUT_ENCODING
+                            encoding of input stream.
+      --output-encoding OUTPUT_ENCODING, -oe OUTPUT_ENCODING
+                            encoding of output stream.
+      --module MODULE, -m MODULE
+                            module to be imported.
+      --module-star MODULE_STAR, -ms MODULE_STAR
+                            module to be imported in form of "from modname import *".
+
+
+Variables
+---------
+
+Following variables can be used within action statement.
+
+:sys, os, path, re: These modules are imported by default.
+
+:FILENAME: The name of file currently reading.
+
+:LINENO: Line numberof the current line.
+
+:L: Current line.
+
+:S: Part of Text matched to condition regex.
+
+:S0, S1, ...: sub-string matched to condition regex. S0 is entire matched part, S1, S2 are sub group of condition regex.
+
+:(name): If condition regex has group names defined by '(?P<name>)', sub-string could be referenced by variable 'name'.
+
+:M: Match object
+
+
+Examples
+--------
+
+Print sum of numeric characters in an each line of input stream::
+
+    pss -a "\d+" "print(sum(int(s) for s in re.findall(r"\d+", L)))" \
+         -a "=" "print('done'); sys.exit(0)"
+
+
+Sum all numeric characters in all lines::
+
+    pss -b "all=0" \
+         -a "\d+" "all+=sum(int(s) for s in re.findall(r"\d+", L)))" \
+         -e "=" "print(all); sys.exit(0)"
+
+Find all extention parts in current directory::
+
+    find . | pss -a ".*" "print path.splitext(L)[1]"
+
