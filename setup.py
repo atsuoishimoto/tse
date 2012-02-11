@@ -6,7 +6,7 @@ def read(fname):
 
 setup(
     name = "tse",
-    version = "0.0.1",
+    version = "0.0.2",
     author = "Atsuo Ishimoto",
     author_email = "ishimoto@gembook.org",
     description = "tse is an input stream editor in Python.",
@@ -26,4 +26,5 @@ setup(
         'console_scripts': ['tse = tse.main:main']
     },
     install_requires=["argparse"],
+    test_suite="tests",
 )
