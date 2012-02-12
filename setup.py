@@ -6,14 +6,14 @@ def read(fname):
 
 setup(
     name = "tse",
-    version = "0.0.2",
+    version = "0.0.3",
     author = "Atsuo Ishimoto",
     author_email = "ishimoto@gembook.org",
     description = "tse is an input stream editor in Python.",
     license = "MIT",
     keywords = "text filter",
     url = "https://github.com/atsuoishimoto/tse",
-    long_description=read('README'),
+    long_description=read('README.rst'),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Topic :: Text Processing :: Filters",
