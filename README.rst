@@ -3,7 +3,7 @@ tse - Python Stream Scripting
 
 tse processes text input stream with Python expressions. Like AWK, tse command line option is a series of pair of condition and action:
 
-    tse -c COND1 -a ACTION1 -c COND2 -a ACTION2 -a ACTION3
+    tse -p COND1 -a ACTION1 -p COND2 -p ACTION2 -a ACTION3
 
 or 
 
@@ -11,15 +11,15 @@ or
 
 For example, to find lines starts with 'abc' ::
 
-    tse -a "^abc" -s "print L"
+    tse -p "^abc" -a "print L"
 
 to find line contains URL ::
 
-    tse -a "http://\\S+" "print S0"  -a "mailto://\\S+" -s "print S0" 
+    tse -s "http://\\S+" "print S0"  -s "mailto://\\S+" "print S0" 
 
 to convert upper case ::
 
-    tse -a ".*" -s "print L.upper()"
+    tse -p ".*" -a "print L.upper()"
 
 ::
 
@@ -65,7 +65,15 @@ Variables
 
 Following variables can be used within action statement.
 
-:sys, os, path, re: These modules are imported by default.
+:variable: values
+
+:sys: Python sys module
+
+:os: Python os module
+
+:path: Python os.path module
+
+:re: python re module
 
 :FILENAME: The name of file currently reading.
 
@@ -85,7 +93,7 @@ Following variables can be used within action statement.
 Script file
 -----------
 
-If the file ~/.tserc exists, the file is execused at begging. You can import your faivorite modules, or write convenient functions you like. The values defined in the scipt file are accessible by action specifyed by command options.
+If the file ~/.tserc exists, the file is execused at beginning. In the script file, you can import your faivorite modules, or write convenient functions you like. The values defined in the scipt file are accessible by actions specifyed in command options.
 
 
 Examples
@@ -93,17 +101,16 @@ Examples
 
 Print sum of numeric characters in an each line of input stream::
 
-    tse -a "\d+" "print(sum(int(s) for s in re.findall(r"\d+", L)))" \
-         -a "=" "print('done'); sys.exit(0)"
+    tse -s "\d+" "print(sum(int(s) for s in re.findall(r"\d+", L)))"
 
 
 Sum all numeric characters in all lines::
 
     tse -b "all=0" \
-         -a "\d+" "all+=sum(int(s) for s in re.findall(r"\d+", L)))" \
-         -e "=" "print(all); sys.exit(0)"
+         -s "\d+" "all+=sum(int(s) for s in re.findall(r"\d+", L)))" \
+         -e "print(all)"
 
 Find all extention parts in current directory::
 
-    find . | tse -a ".*" "print path.splitext(L)[1]"
+    find . | tse -s ".*" "print path.splitext(L)[1]"
 
