@@ -210,6 +210,7 @@ def getargparser():
                         help='module to be imported in form of "from modname import *".')
     parser.add_argument('FILE', nargs="*",
                         help='With no FILE, or when FILE is -, read standard input.')
+    parser.add_argument('--version', action='version', version='%(prog)s 0.0.3')
     
     return parser
 
