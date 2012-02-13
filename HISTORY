@@ -1,3 +1,9 @@
+0.0.3 - 2012/2/13
+-----------------
+
+- Added --version option.
+- Fixed docuentation bug.
+
 0.0.2 - 2012/2/12
 -----------------
 
@@ -5,6 +11,7 @@
 - Changed command line options.
 
 0.0.1 - 2012/1/29
+-----------------
 
 - Initial release.
 
