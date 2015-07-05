@@ -25,6 +25,6 @@ setup(
     entry_points = {
         'console_scripts': ['tse = tse.main:main']
     },
-    install_requires=["argparse"],
+    install_requires=["argparse", "six"],
     test_suite="tests",
 )

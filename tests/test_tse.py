@@ -1,6 +1,8 @@
 # -*- coding:utf-8 -*-
 
-import unittest, tempfile, os, sys, fileinput, StringIO
+import six
+import io, unittest, tempfile, os, sys, fileinput
+from six import StringIO
 import tse.main
 
 class _TestBase(unittest.TestCase):
@@ -22,11 +24,14 @@ class _TestBase(unittest.TestCase):
         sys.stdin = sys.__stdin__
         sys.stdout = sys.__stdout__
 
-    def _run(self, args, input):
+    def _run(self, args, input, enc=None):
+        if not enc:
+            enc = sys.getfilesystemencoding()
+
         args = self._getParser().parse_args(args)
 
         fd, self.testfilename = tempfile.mkstemp()
-        self.testfile = os.fdopen(fd, "w")
+        self.testfile = io.open(fd, 'w', encoding=enc)
         self.testfile.write(input)
         self.testfile.flush()
         
@@ -67,34 +72,34 @@ class TestArgs(_TestBase):
 
 class TestExec(_TestBase):
     def testBegin(self):
-        locals, globals = self._run(["-b", "a=100", "-b", "b=200"], "")
+        globals = self._run(["-b", "a=100", "-b", "b=200"], u"")
         self.failUnlessEqual(globals['a'], 100)
         self.failUnlessEqual(globals['b'], 200)
 
     def testEnd(self):
-        locals, globals = self._run(["-e", "a=100", "-e", "b=200"], "")
+        globals = self._run(["-e", "a=100", "-e", "b=200"], u"")
         self.failUnlessEqual(globals['a'], 100)
         self.failUnlessEqual(globals['b'], 200)
 
     def testStatement(self):
-        locals, globals = self._run(["-b" "lines=[]", "-s", "\w+", "lines.append(L)"], "abc\n----\ndef\n")
+        globals = self._run(["-b" "lines=[]", "-s", "\w+", "lines.append(L)"], u"abc\n----\ndef\n")
         self.failUnlessEqual(globals['lines'], ["abc", "def"])
         
     def testPattern(self):
-        locals, globals = self._run(["-p", "\w+", "-p", "\w+"], "abc\n----\ndef\n")
+        globals = self._run(["-p", "\w+", "-p", "\w+"], u"abc\n----\ndef\n")
         
     def testAction(self):
-        locals, globals = self._run(["-b" "lines=[]", "-p", "\w+", "-a", "lines.append(L)"], "abc\n----\ndef\n")
+        globals = self._run(["-b" "lines=[]", "-p", "\w+", "-a", "lines.append(L)"], u"abc\n----\ndef\n")
         self.failUnlessEqual(globals['lines'], ["abc", "def"])
         
     def testModule(self):
-        locals, globals = self._run(["-m", "unicodedata", "-m", "datetime as ddd", "-s", "\w+"], "abc\n----\ndef\n")
+        globals = self._run(["-m", "unicodedata", "-m", "datetime as ddd", "-s", "\w+"], u"abc\n----\ndef\n")
         import unicodedata, datetime
         self.failUnlessEqual(globals['unicodedata'], unicodedata)
         self.failUnlessEqual(globals['ddd'], datetime)
         
     def testModuleStar(self):
-        locals, globals = self._run(["-ms", "unicodedata", "-s", "\w+"], "abc\n----\ndef\n")
+        globals = self._run(["-ms", "unicodedata", "-s", "\w+"], u"abc\n----\ndef\n")
         import unicodedata, datetime
         self.failUnlessEqual(globals['name'], unicodedata.name)
 
@@ -105,23 +110,28 @@ class TestExec(_TestBase):
             testfile.write("script_a=100")
             testfile.close()
             
-            locals, globals = self._run(["-s", "\w+", "-F", filename], "")
+            globals = self._run(["-s", "\w+", "-F", filename], u"")
             self.failUnlessEqual(globals['script_a'], 100)
         finally:
             os.unlink(filename)
 
 class TestEncoding(_TestBase):
     def testInput(self):
-        locals, globals = self._run(["-s", ".*", "a=L", "-i", "euc-jp"], u"\N{HIRAGANA LETTER A}".encode("euc-jp"))
+        globals = self._run(["-s", ".*", "a=L", "-i", "euc-jp"], u"\N{HIRAGANA LETTER A}",
+            enc='euc-jp')
         self.failUnlessEqual(globals['a'], u"\N{HIRAGANA LETTER A}")
         
     def testOutput(self):
-        sys.stdout = out = StringIO.StringIO()
-        locals, globals = self._run(
-            ["-s", ".*", "print u'\\N{HIRAGANA LETTER I}'", 
+        sys.stdout = out = StringIO()
+        globals = self._run(
+            ["-s", ".*", "print(u'\\N{HIRAGANA LETTER I}')", 
              "-i", "euc-jp", "-o", "euc-jp"], 
-            u"\N{HIRAGANA LETTER I}".encode("euc-jp"))
-        self.failUnlessEqual(unicode(out.getvalue()[:-1], "euc-jp"), u"\N{HIRAGANA LETTER I}")
+            u"\N{HIRAGANA LETTER I}", enc='euc-jp')
+
+        ret = out.getvalue()[:-1]
+        if six.PY3:
+            ret = ret.encode('euc_jp')
+        self.failUnlessEqual(ret, u"\N{HIRAGANA LETTER I}".encode('euc-jp'))
         
 if __name__ == '__main__':
     unittest.main()
