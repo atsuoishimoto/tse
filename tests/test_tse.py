@@ -34,10 +34,9 @@ class _TestBase(unittest.TestCase):
         self.testfile = io.open(fd, 'w', encoding=enc)
         self.testfile.write(input)
         self.testfile.flush()
-        
         env = tse.main.Env(args.statement, args.begin, args.end, 
             args.input_encoding, args.output_encoding, args.module,
-            args.module_star, args.script_file, [self.testfilename])
+            args.module_star, args.script_file, args.inplace, [self.testfilename])
             
         return env.run()
         
@@ -117,7 +116,7 @@ class TestExec(_TestBase):
 
 class TestEncoding(_TestBase):
     def testInput(self):
-        globals = self._run(["-s", ".*", "a=L", "-i", "euc-jp"], u"\N{HIRAGANA LETTER A}",
+        globals = self._run(["-s", ".*", "a=L", "-ie", "euc-jp"], u"\N{HIRAGANA LETTER A}",
             enc='euc-jp')
         self.failUnlessEqual(globals['a'], u"\N{HIRAGANA LETTER A}")
         
@@ -125,7 +124,7 @@ class TestEncoding(_TestBase):
         sys.stdout = out = StringIO()
         globals = self._run(
             ["-s", ".*", "print(u'\\N{HIRAGANA LETTER I}')", 
-             "-i", "euc-jp", "-o", "euc-jp"], 
+             "-ie", "euc-jp", "-o", "euc-jp"], 
             u"\N{HIRAGANA LETTER I}", enc='euc-jp')
 
         ret = out.getvalue()[:-1]
@@ -133,6 +132,18 @@ class TestEncoding(_TestBase):
             ret = ret.encode('euc_jp')
         self.failUnlessEqual(ret, u"\N{HIRAGANA LETTER I}".encode('euc-jp'))
         
+
+class TestInplace(_TestBase):
+    def testInplace(self):
+        self._run(["-s", ".*", "print(u'\N{HIRAGANA LETTER I}')", "-i", ".bak"],
+            u"\N{HIRAGANA LETTER A}")
+        self.failUnlessEqual(open(self.testfilename, 'rb').read()[:-1],
+            u"\N{HIRAGANA LETTER I}".encode('utf-8'))
+        self.failUnlessEqual(open(self.testfilename+'.bak', 'rb').read(),
+            u"\N{HIRAGANA LETTER A}".encode('utf-8'))
+        os.unlink(self.testfilename+'.bak')
+
+
 if __name__ == '__main__':
     unittest.main()
 

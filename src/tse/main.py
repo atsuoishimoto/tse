@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 
-import sys, argparse, re, locale, ast, codecs, fileinput, os, six
+import sys, argparse, re, locale, ast, codecs, fileinput, os, six, io, shutil
 
 SHORTAPPNAME = "tse"
 LOGAPPNAME = "Text Stream Editor in Python"
@@ -15,7 +15,7 @@ class Env:
     scriptfile = SCRIPTFILE
     
     def __init__(self, statement, begin, end, input_encoding, output_encoding,
-            module, module_star, script_file, files):
+            module, module_star, script_file, inplace, files):
         if statement:
             self.actions = [(self.build_re(r), self.build_code(c)) 
                 for (r, c) in self._parse_statement(statement)]
@@ -29,7 +29,7 @@ class Env:
             self.outputenc = output_encoding
         if script_file:
             self.scriptfile = script_file
-
+        self.inplace = inplace
         self.imports = module or ()
         self.imports_str = module_star or ()
         self.files = files or ()
@@ -71,7 +71,7 @@ class Env:
 
         if not code:
             return None
-
+        enc = self.encoding
         class _Transform(ast.NodeTransformer):
             def visit_Str(self, node):
                 if not isinstance(node.s, unicode):
@@ -84,19 +84,29 @@ class Env:
         _Transform().visit(exprs)
         return compile(exprs, filename, "exec")
 
+    def _run_script(self, input, filename, globals, locals):
+        for lineno, line in enumerate(input, 1):
+            line = line.rstrip(u"\n")
+            locals['L'] = line
+            locals['LINENO'] = lineno
+            locals['FILENAME'] = filename
+            for r, c in self.actions:
+                m = r.search(line)
+                if m:
+                    S = (m.group(),) + m.groups()
+                    locals['S'] = S
+                    for n, s in enumerate(S):
+                        locals['S'+str(n)] = s
+                    for k, v in m.groupdict().items():
+                        locals[k] = v
+                    locals['M'] = m
+
+                    if c:
+                        six.exec_(c, globals, locals)
+
+                    break
+
     def run(self):
-
-        reader = codecs.getreader(self.inputenc)
-
-        if six.PY2:
-            writer = codecs.getwriter(self.outputenc)
-            sys.stdout = writer(sys.stdout)
-        else:
-            if hasattr(sys.stdout, 'buffer'):
-                writer = codecs.getwriter(self.outputenc)
-                sys.stdout = writer(sys.stdout.buffer)
-
-        sys.stdin = reader(sys.stdin)
 
         locals = globals = {}
         
@@ -123,31 +133,45 @@ class Env:
         if self.begincode:
             six.exec_(self.begincode, globals, locals)
         
-        def openhook(filename, mode):
-            return reader(open(filename, 'rb'))
 
-        lines = fileinput.input(self.files, openhook=openhook)
-        for line in lines:
-            line = line.rstrip(u"\n")
-            locals['L'] = line
-            locals['LINENO'] = lines.lineno()
-            locals['FILENAME'] = lines.filename()
-            for r, c in self.actions:
-                m = r.search(line)
-                if m:
-                    S = (m.group(),) + m.groups()
-                    locals['S'] = S
-                    for n, s in enumerate(S):
-                        locals['S'+str(n)] = s
-                    for k, v in m.groupdict().items():
-                        locals[k] = v
-                    locals['M'] = m
+        # todo: clean up followings
+        if not self.inplace:
+            if six.PY2:
+                writer = codecs.getwriter(self.outputenc)
+                writer.encoding = self.outputenc
+                sys.stdout = writer(sys.stdout)
+            else:
+                if hasattr(sys.stdout, 'buffer'):
+                    writer = codecs.getwriter(self.outputenc)
+                    sys.stdout = writer(sys.stdout.buffer)
 
-                    if c:
-                        six.exec_(c, globals, locals)
+        if not self.files:
+            reader = codecs.getreader(self.inputenc)
+            self._run_script(reader(sys.stdin), '<stdin>', globals, locals)
+        else:
+            for f in self.files:
+                stdout = sys.stdout
+                if self.inplace:
+                    outfilename = '%s%s.%s' % (f, self.inplace, os.getpid())
+                    if six.PY2:
+                        writer = codecs.getwriter(self.outputenc)
+                        writer.encoding = self.outputenc
+                        sys.stdout = writer(open(outfilename, 'w'))
+                    else:
+                        writer = codecs.getwriter(self.outputenc)
+                        sys.stdout = io.open(outfilename, 'w', encoding=self.outputenc)
+                try:
+                    with io.open(f, 'r', encoding=self.inputenc) as input:
+                        self._run_script(input, f, globals, locals)
+                finally:
+                    if self.inplace:
+                        sys.stdout.close()
+                        sys.stdout = stdout
 
-                    break
-            
+                if self.inplace:
+                    shutil.move(f, '%s%s' % (f, self.inplace))
+                    shutil.move(outfilename, f)
+
         if self.endcode:
             six.exec_(self.endcode, globals, locals)
         
@@ -190,7 +214,7 @@ class ActionAction(StatementAction):
             if argtype == StatementAction.ARGTYPE:
                 break
         raise argparse.ArgumentError(self, "action should be preceded by condition")
-            
+        
 def getargparser():
     if six.PY2:
         def argstr(s):
@@ -210,6 +234,8 @@ def getargparser():
                         help='action invoked before input files have been read.')
     parser.add_argument('--end', '-e', action='append', type=argstr,
                         help='action invoked after input files have been exhausted.')
+    parser.add_argument('--inplace', '-i', action='store', type=argstr,
+                        help='edit files in-place.')
     parser.add_argument('--input-encoding', '-ie', action='store', type=argstr,
                         help='encoding of input stream.')
     parser.add_argument('--output-encoding', '-oe', action='store', type=argstr,
@@ -231,9 +257,11 @@ def main():
     args = parser.parse_args()
     if not args.statement:
         parser.error("statement required")
+    if args.inplace and not args.FILE:
+        parser.error("--inplace may not be used with stdin")
 
     env = Env(args.statement, args.begin, args.end, args.input_encoding, args.output_encoding,
-            args.module, args.module_star, args.script_file, args.FILE)
+            args.module, args.module_star, args.script_file, args.inplace, args.FILE)
     env.run()
 
 if __name__ == '__main__':
