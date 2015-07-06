@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 
-import sys, argparse, re, locale, ast, codecs, fileinput, os, six, io, shutil
+import sys, argparse, re, locale, ast, codecs, fileinput, os, six, io, shutil, re
 
 SHORTAPPNAME = "tse"
 LOGAPPNAME = "Text Stream Editor in Python"
@@ -64,13 +64,61 @@ class Env:
 
     def build_re(self, regex):
         return re.compile(regex)
-    
+
+    RE_INDENT = re.compile(r'{{|}}')
+    RE_TOKEN = re.compile(r'"""|\'\'\'|"|\'|#')
+
+    class sub_indent:
+        indent = 0
+        def __call__(self, m):
+            if m.group() == '{{':
+                self.indent += 4
+            else:
+                self.indent -= 4
+                if self.indent < 0:
+                    raise ValueError('Indent underflow')
+            return '\n' + ' ' * self.indent 
+
     def build_code(self, code):
+        pos = 0
+        s = []
+        indent = self.sub_indent()
+        while True:
+            m = self.RE_TOKEN.search(code, pos)
+            if not m:
+                break
+            token_start, token_end = m.span()
+            if pos != token_start:
+                s.append(self.RE_INDENT.sub(indent, code[pos:token_start]))
+                pos = token_start
+
+            grp = m.group()
+            end_token = '\n' if grp.startswith('#') else grp
+            end = re.compile(r'(\.)|(%s)' % end_token)
+            while True:
+                m = end.search(code, token_end)
+                if m:
+                    token_end = m.end()
+                    if m.group().startswith('\\'):
+                        continue
+                    else:
+                        s.append(code[token_start:token_end])
+                        pos = token_end
+                        break
+                else:
+                    s.append(code[token_start:])
+                    pos = len(code)
+
+        if pos != len(code):
+            s.append(self.RE_INDENT.sub(indent, code[pos:]))
+
+        code = ''.join(s)
         if six.PY3:
             return code
 
         if not code:
             return None
+
         enc = self.encoding
         class _Transform(ast.NodeTransformer):
             def visit_Str(self, node):

@@ -144,6 +144,16 @@ class TestInplace(_TestBase):
         os.unlink(self.testfilename+'.bak')
 
 
+class TestIndent(_TestBase):
+    def testIndent(self):
+        sys.stdout = out = StringIO()
+        self._run(["-s", ".*", 
+            "for c in L:{{if ord(c) % 2:{{print(c)}}else:{{print(c*2)}}}}"],
+            u"abcdefg")
+
+        ret = out.getvalue()[:-1]
+        self.failUnlessEqual(ret, 'a\nbb\nc\ndd\ne\nff\ng')
+
 if __name__ == '__main__':
     unittest.main()
 
