@@ -36,7 +36,8 @@ class _TestBase(unittest.TestCase):
         self.testfile.flush()
         env = tse.main.Env(args.statement, args.begin, args.end, 
             args.input_encoding, args.output_encoding, args.module,
-            args.module_star, args.script_file, args.inplace, [self.testfilename])
+            args.module_star, args.script_file, args.inplace, args.ignore_case,
+            [self.testfilename])
             
         return env.run()
         
@@ -81,16 +82,17 @@ class TestExec(_TestBase):
         self.failUnlessEqual(globals['b'], 200)
 
     def testStatement(self):
-        globals = self._run(["-b" "lines=[]", "-s", "\w+", "lines.append(L)"], u"abc\n----\ndef\n")
+        globals = self._run(["-b", "lines=[]", "-s", "\w+", "lines.append(L)"], u"abc\n----\ndef\n")
         self.failUnlessEqual(globals['lines'], ["abc", "def"])
-        
-    def testPattern(self):
-        globals = self._run(["-p", "\w+", "-p", "\w+"], u"abc\n----\ndef\n")
         
     def testAction(self):
-        globals = self._run(["-b" "lines=[]", "-p", "\w+", "-a", "lines.append(L)"], u"abc\n----\ndef\n")
+        globals = self._run(["-b", "lines=[]", "-p", "\w+", "-a", "lines.append(L)"], u"abc\n----\ndef\n")
         self.failUnlessEqual(globals['lines'], ["abc", "def"])
         
+    def testIgnorecase(self):
+        globals = self._run(["-i", "-b" "lines=[]", "-p", "a", "-a", "lines.append(L)"], u"abc\nAbc\n123\n")
+        self.failUnlessEqual(globals['lines'], ["abc", "Abc"])
+
     def testModule(self):
         globals = self._run(["-m", "unicodedata", "-m", "datetime as ddd", "-s", "\w+"], u"abc\n----\ndef\n")
         import unicodedata, datetime
@@ -135,10 +137,10 @@ class TestEncoding(_TestBase):
 
 class TestInplace(_TestBase):
     def testInplace(self):
-        self._run(["-s", ".*", "print(u'\N{HIRAGANA LETTER I}')", "-i", ".bak"],
+        self._run(["-s", ".*", "print(u'\N{HIRAGANA LETTER I}')", "--inplace", ".bak"],
             u"\N{HIRAGANA LETTER A}")
-        self.failUnlessEqual(open(self.testfilename, 'rb').read()[:-1],
-            u"\N{HIRAGANA LETTER I}".encode('utf-8'))
+        self.failUnlessEqual(open(self.testfilename, 'rb').read(),
+            u"\N{HIRAGANA LETTER I}\n".encode('utf-8'))
         self.failUnlessEqual(open(self.testfilename+'.bak', 'rb').read(),
             u"\N{HIRAGANA LETTER A}".encode('utf-8'))
         os.unlink(self.testfilename+'.bak')
@@ -153,6 +155,15 @@ class TestIndent(_TestBase):
 
         ret = out.getvalue()[:-1]
         self.failUnlessEqual(ret, 'a\nbb\nc\ndd\ne\nff\ng')
+
+    def testString(self):
+        sys.stdout = out = StringIO()
+        self._run(["-s", ".*", 
+            'print("abcdefg\\\"")'],
+            u"abcdefg")
+
+        ret = out.getvalue()[:-1]
+        self.failUnlessEqual(ret, 'abcdefg"')
 
 if __name__ == '__main__':
     unittest.main()

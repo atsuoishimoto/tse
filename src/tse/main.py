@@ -15,7 +15,9 @@ class Env:
     scriptfile = SCRIPTFILE
     
     def __init__(self, statement, begin, end, input_encoding, output_encoding,
-            module, module_star, script_file, inplace, files):
+            module, module_star, script_file, inplace, ignore_case, files):
+        self.ignore_case = ignore_case
+
         if statement:
             self.actions = [(self.build_re(r), self.build_code(c)) 
                 for (r, c) in self._parse_statement(statement)]
@@ -63,7 +65,8 @@ class Env:
             yield pattern, "\n".join(actions)
 
     def build_re(self, regex):
-        return re.compile(regex)
+        flags = re.I if self.ignore_case else 0
+        return re.compile(regex, flags)
 
     RE_INDENT = re.compile(r'{{|}}')
     RE_TOKEN = re.compile(r'"""|\'\'\'|"|\'|#')
@@ -94,12 +97,13 @@ class Env:
 
             grp = m.group()
             end_token = '\n' if grp.startswith('#') else grp
-            end = re.compile(r'(\.)|(%s)' % end_token)
+            end = re.compile(r'(\\.)|(%s)' % end_token)
             while True:
                 m = end.search(code, token_end)
                 if m:
                     token_end = m.end()
                     if m.group().startswith('\\'):
+                        pos = token_end
                         continue
                     else:
                         s.append(code[token_start:token_end])
@@ -108,6 +112,7 @@ class Env:
                 else:
                     s.append(code[token_start:])
                     pos = len(code)
+                    break
 
         if pos != len(code):
             s.append(self.RE_INDENT.sub(indent, code[pos:]))
@@ -135,9 +140,6 @@ class Env:
     def _run_script(self, input, filename, globals, locals):
         for lineno, line in enumerate(input, 1):
             line = line.rstrip(u"\n")
-            locals['L'] = line
-            locals['LINENO'] = lineno
-            locals['FILENAME'] = filename
             for r, c in self.actions:
                 m = r.search(line)
                 if m:
@@ -150,6 +152,13 @@ class Env:
                     locals['M'] = m
 
                     if c:
+                        locals['L'] = line
+                        locals['L0'] = line.split()
+                        for n, s in enumerate(locals['L0'], 1):
+                            locals['L'+str(n)] = s
+                        locals['LINENO'] = lineno
+                        locals['FILENAME'] = filename
+
                         six.exec_(c, globals, locals)
 
                     break
@@ -195,7 +204,8 @@ class Env:
 
         if not self.files:
             reader = codecs.getreader(self.inputenc)
-            self._run_script(reader(sys.stdin), '<stdin>', globals, locals)
+            buf = sys.stdin if six.PY2 else sys.stdin.buffer
+            self._run_script(reader(buf), '<stdin>', globals, locals)
         else:
             for f in self.files:
                 stdout = sys.stdout
@@ -282,7 +292,9 @@ def getargparser():
                         help='action invoked before input files have been read.')
     parser.add_argument('--end', '-e', action='append', type=argstr,
                         help='action invoked after input files have been exhausted.')
-    parser.add_argument('--inplace', '-i', action='store', type=argstr,
+    parser.add_argument('--ignore-case', '-i', action='store_true',
+                        help='ignore case distinctions.')
+    parser.add_argument('--inplace', action='store', type=argstr, metavar='EXTENSION',
                         help='edit files in-place.')
     parser.add_argument('--input-encoding', '-ie', action='store', type=argstr,
                         help='encoding of input stream.')
@@ -309,7 +321,8 @@ def main():
         parser.error("--inplace may not be used with stdin")
 
     env = Env(args.statement, args.begin, args.end, args.input_encoding, args.output_encoding,
-            args.module, args.module_star, args.script_file, args.inplace, args.FILE)
+            args.module, args.module_star, args.script_file, args.inplace, args.ignore_case, 
+            args.FILE)
     env.run()
 
 if __name__ == '__main__':
