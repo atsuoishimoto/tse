@@ -21,6 +21,7 @@ class Env:
         if statement:
             self.actions = [(self.build_re(r), self.build_code(c)) 
                 for (r, c) in self._parse_statement(statement)]
+
         if begin:
             self.begincode = self.build_code("\n".join(begin))
         if end:
@@ -41,30 +42,32 @@ class Env:
         actions = []
         for argtype, values in statement:
             if argtype == StatementAction.ARGTYPE:
-                if pattern:
+                if pattern is not None:
                     yield pattern, "\n".join(actions)
                     pattern = None
                     actions = []
                 yield values[0], "\n".join(values[1:])
 
             elif argtype == PatternAction.ARGTYPE:
-                if pattern:
+                if pattern is not None:
                     yield pattern, "\n".join(actions)
                     pattern = None
                     actions = []
                 pattern = values
 
             elif argtype == ActionAction.ARGTYPE:
-                assert pattern
+                assert pattern is not None
                 actions.append(values)
 
             else:
                 raise RuntimeError
 
-        if pattern:
+        if pattern is not None:
             yield pattern, "\n".join(actions)
 
     def build_re(self, regex):
+        if not regex:
+            return None
         flags = re.I if self.ignore_case else 0
         return re.compile(regex, flags)
 
@@ -141,16 +144,20 @@ class Env:
         for lineno, line in enumerate(input, 1):
             line = line.rstrip(u"\n")
             for r, c in self.actions:
-                m = r.search(line)
-                if m:
-                    S = (m.group(),) + m.groups()
-                    locals['S'] = S
-                    for n, s in enumerate(S):
-                        locals['S'+str(n)] = s
-                    for k, v in m.groupdict().items():
-                        locals[k] = v
-                    locals['M'] = m
+                if not c:
+                    continue
+                if r:
+                    m = r.search(line)
+                    if m:
+                        S = (m.group(),) + m.groups()
+                        locals['S'] = S
+                        for n, s in enumerate(S):
+                            locals['S'+str(n)] = s
+                        for k, v in m.groupdict().items():
+                            locals[k] = v
+                        locals['M'] = m
 
+                if not r or m:
                     if c:
                         locals['L'] = line
                         locals['L0'] = line.split()
