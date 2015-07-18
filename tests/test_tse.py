@@ -46,7 +46,7 @@ class _TestBase(unittest.TestCase):
                            args.module_star, args.script_file, args.inplace, args.ignore_case,
                            [self.testfilename])
 
-        return env.run()
+        return tse.main.run(env)
 
 
 class TestArgs(_TestBase):

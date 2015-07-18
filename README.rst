@@ -19,7 +19,10 @@ to find line contains URL ::
 
 to convert upper case ::
 
-    tse -p ".*" -a "print L.upper()"
+    tse -p ".\*" -a "print L.upper()"
+
+\ 
+
 
 ::
 
@@ -57,13 +60,49 @@ to convert upper case ::
                           module to be imported.
     --module-star MODULE_STAR, -ms MODULE_STAR
                           module to be imported in form of "from modname import
-                          *".
+                          \*".
   
-  
+Patterns and Actions
+-----------------------
+
+Pattern is a regular expression to search line. Action is executed when corresponding pattern is found in the line. If a pattern is matched, following pattern/action pairs are not execused.
+
+Empty pattern means '.\*', and empty action means 'print(L)'.
+
+Action arguments in the same pattern are joined with '\n'. So, you can write
+
+::
+
+    tse -p '.\*' -a 'for c in L:' -a '    print(c)'
+
+    tse -s '.\*' 'for c in L:' '    print(c)'
+
+
+
+'\{\{' and '\}\}' in the action are converted to newline + indent/dedent. For example, 
+
+::
+
+    'if L1:{{for c in L2:{{print(c)}}else:{{print(L3)}}}}else:{{print(L4)}}'
+
+is converted to 
+
+::
+
+    if L1:
+        for c in L2:
+            print(c)
+        else:
+            print(L3)
+    else:
+        print(L4)
+
+'{{' and '}}' in the string literal and comments are ignored.
+
 Variables
 ---------
 
-Following variables can be used within action statement.
+Following variables are can be used within action statement.
 
 :variable: values
 
@@ -80,6 +119,10 @@ Following variables can be used within action statement.
 :LINENO: Line numberof the current line.
 
 :L: Current line.
+
+:L0: Current line.
+
+:L1, L2: Fields of the current line separeted by whitespace.
 
 :S: Part of Text matched to condition regex.
 

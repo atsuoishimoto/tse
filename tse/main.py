@@ -79,7 +79,7 @@ class Env:
 
     def build_re(self, regex):
         if not regex:
-            return None
+            regex = '.*'
         flags = re.I if self.ignore_case else 0
         return re.compile(regex, flags)
 
@@ -158,107 +158,105 @@ class Env:
         _Transform().visit(exprs)
         return compile(exprs, filename, "exec")
 
-    def _run_script(self, input, filename, globals, locals):
-        for lineno, line in enumerate(input, 1):
-            line = line.rstrip(u"\n")
-            for r, c in self.actions:
-                if not c:
-                    continue
-                if r:
-                    m = r.search(line)
-                    if m:
-                        S = (m.group(),) + m.groups()
-                        locals['S'] = S
-                        for n, s in enumerate(S):
-                            locals['S' + str(n)] = s
-                        for k, v in m.groupdict().items():
-                            locals[k] = v
-                        locals['M'] = m
+def _run_script(env, input, filename, globals, locals):
+    for lineno, line in enumerate(input, 1):
+        line = line.rstrip(u"\n")
+        for r, c in env.actions:
+            if not c:
+                continue
 
-                if not r or m:
-                    if c:
-                        locals['L'] = line
-                        locals['L0'] = line.split()
-                        for n, s in enumerate(locals['L0'], 1):
-                            locals['L' + str(n)] = s
-                        locals['LINENO'] = lineno
-                        locals['FILENAME'] = filename
+            m = r.search(line)
+            if m:
+                S = (m.group(),) + m.groups()
+                locals['S'] = S
+                for n, s in enumerate(S):
+                    locals['S' + str(n)] = s
+                for k, v in m.groupdict().items():
+                    locals[k] = v
+                locals['M'] = m
 
-                        six.exec_(c, globals, locals)
+                locals['L'] = line
+                locals['L0'] = line.split()
+                for n, s in enumerate(locals['L0'], 1):
+                    locals['L' + str(n)] = s
+                locals['LINENO'] = lineno
+                locals['FILENAME'] = filename
 
-                    break
+                six.exec_(c, globals, locals)
 
-    def run(self):
+                break
 
-        locals = globals = {}
+def run(env):
 
-        script = ""
-        if self.scriptfile:
-            try:
-                with open(self.scriptfile, "rU") as f:
-                    script = f.read()
-            except IOError:
-                pass
+    locals = globals = {}
 
-        if script:
-            six.exec_(script + "\n", globals, locals)
+    script = ""
+    if env.scriptfile:
+        try:
+            with open(env.scriptfile, "rU") as f:
+                script = f.read()
+        except IOError:
+            pass
 
-        six.exec_("import sys, os, re", globals, locals)
-        six.exec_("from os import path", globals, locals)
+    if script:
+        six.exec_(script + "\n", globals, locals)
 
-        for _import in self.imports:
-            six.exec_("import %s" % _import, globals, locals)
+    six.exec_("import sys, os, re", globals, locals)
+    six.exec_("from os import path", globals, locals)
 
-        for _import in self.imports_str:
-            six.exec_("from %s import *" % _import, globals, locals)
+    for _import in env.imports:
+        six.exec_("import %s" % _import, globals, locals)
 
-        if self.begincode:
-            six.exec_(self.begincode, globals, locals)
+    for _import in env.imports_str:
+        six.exec_("from %s import *" % _import, globals, locals)
 
-        # todo: clean up followings
-        if not self.inplace:
-            if six.PY2:
-                writer = codecs.getwriter(self.outputenc)
-                writer.encoding = self.outputenc
-                sys.stdout = writer(sys.stdout)
-            else:
-                if hasattr(sys.stdout, 'buffer'):
-                    writer = codecs.getwriter(self.outputenc)
-                    sys.stdout = writer(sys.stdout.buffer)
+    if env.begincode:
+        six.exec_(env.begincode, globals, locals)
 
-        if not self.files:
-            reader = codecs.getreader(self.inputenc)
-            buf = sys.stdin if six.PY2 else sys.stdin.buffer
-            self._run_script(reader(buf), '<stdin>', globals, locals)
+    # todo: clean up followings
+    if not env.inplace:
+        if six.PY2:
+            writer = codecs.getwriter(env.outputenc)
+            writer.encoding = env.outputenc
+            sys.stdout = writer(sys.stdout)
         else:
-            for f in self.files:
-                stdout = sys.stdout
-                if self.inplace:
-                    outfilename = '%s%s.%s' % (f, self.inplace, os.getpid())
-                    if six.PY2:
-                        writer = codecs.getwriter(self.outputenc)
-                        writer.encoding = self.outputenc
-                        sys.stdout = writer(open(outfilename, 'w'))
-                    else:
-                        writer = codecs.getwriter(self.outputenc)
-                        sys.stdout = io.open(
-                            outfilename, 'w', encoding=self.outputenc)
-                try:
-                    with io.open(f, 'r', encoding=self.inputenc) as input:
-                        self._run_script(input, f, globals, locals)
-                finally:
-                    if self.inplace:
-                        sys.stdout.close()
-                        sys.stdout = stdout
+            if hasattr(sys.stdout, 'buffer'):
+                writer = codecs.getwriter(env.outputenc)
+                sys.stdout = writer(sys.stdout.buffer)
 
-                if self.inplace:
-                    shutil.move(f, '%s%s' % (f, self.inplace))
-                    shutil.move(outfilename, f)
+    if not env.files:
+        reader = codecs.getreader(env.inputenc)
+        buf = sys.stdin if six.PY2 else sys.stdin.buffer
+        _run_script(env, reader(buf), '<stdin>', globals, locals)
+    else:
+        for f in env.files:
+            stdout = sys.stdout
+            if env.inplace:
+                outfilename = '%s%s.%s' % (f, env.inplace, os.getpid())
+                if six.PY2:
+                    writer = codecs.getwriter(env.outputenc)
+                    writer.encoding = env.outputenc
+                    sys.stdout = writer(open(outfilename, 'w'))
+                else:
+                    writer = codecs.getwriter(env.outputenc)
+                    sys.stdout = io.open(
+                        outfilename, 'w', encoding=env.outputenc)
+            try:
+                with io.open(f, 'r', encoding=env.inputenc) as input:
+                    _run_script(env, input, f, globals, locals)
+            finally:
+                if env.inplace:
+                    sys.stdout.close()
+                    sys.stdout = stdout
 
-        if self.endcode:
-            six.exec_(self.endcode, globals, locals)
+            if env.inplace:
+                shutil.move(f, '%s%s' % (f, env.inplace))
+                shutil.move(outfilename, f)
 
-        return locals
+    if env.endcode:
+        six.exec_(env.endcode, globals, locals)
+
+    return locals
 
 
 class ScriptAction(argparse._StoreAction):
@@ -346,7 +344,7 @@ def getargparser():
     parser.add_argument('FILE', nargs="*", type=argstr,
                         help='With no FILE, or when FILE is -, read standard input.')
     parser.add_argument('--version', action='version',
-                        version='%(prog)s 0.0.3')
+                        version='%(prog)s 0.0.4')
 
     return parser
 
@@ -363,7 +361,7 @@ def main():
         args.statement, args.begin, args.end, args.input_encoding, args.output_encoding,
         args.module, args.module_star, args.script_file, args.inplace, args.ignore_case,
         args.FILE)
-    env.run()
+    run(env)
 
 if __name__ == '__main__':
     main()
