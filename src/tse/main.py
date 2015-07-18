@@ -1,10 +1,22 @@
 # -*- coding:utf-8 -*-
 
-import sys, argparse, re, locale, ast, codecs, fileinput, os, six, io, shutil, re
+import sys
+import argparse
+import re
+import locale
+import ast
+import codecs
+import fileinput
+import os
+import six
+import io
+import shutil
+import re
 
 SHORTAPPNAME = "tse"
 LOGAPPNAME = "Text Stream Editor in Python"
 SCRIPTFILE = os.path.join(os.path.expanduser(u"~"), ".tserc")
+
 
 class Env:
     actions = ()
@@ -13,14 +25,14 @@ class Env:
     inputenc = outputenc = sys.getfilesystemencoding()
     encoding = locale.getpreferredencoding()
     scriptfile = SCRIPTFILE
-    
+
     def __init__(self, statement, begin, end, input_encoding, output_encoding,
-            module, module_star, script_file, inplace, ignore_case, files):
+                 module, module_star, script_file, inplace, ignore_case, files):
         self.ignore_case = ignore_case
 
         if statement:
-            self.actions = [(self.build_re(r), self.build_code(c)) 
-                for (r, c) in self._parse_statement(statement)]
+            self.actions = [(self.build_re(r), self.build_code(c))
+                            for (r, c) in self._parse_statement(statement)]
 
         if begin:
             self.begincode = self.build_code("\n".join(begin))
@@ -76,6 +88,7 @@ class Env:
 
     class sub_indent:
         indent = 0
+
         def __call__(self, m):
             if m.group() == '{{':
                 self.indent += 4
@@ -83,7 +96,7 @@ class Env:
                 self.indent -= 4
                 if self.indent < 0:
                     raise ValueError('Indent underflow')
-            return '\n' + ' ' * self.indent 
+            return '\n' + ' ' * self.indent
 
     def build_code(self, code):
         if not code:
@@ -131,7 +144,9 @@ class Env:
             return None
 
         enc = self.encoding
+
         class _Transform(ast.NodeTransformer):
+
             def visit_Str(self, node):
                 if not isinstance(node.s, unicode):
                     s = unicode(node.s, 'utf-8')
@@ -155,7 +170,7 @@ class Env:
                         S = (m.group(),) + m.groups()
                         locals['S'] = S
                         for n, s in enumerate(S):
-                            locals['S'+str(n)] = s
+                            locals['S' + str(n)] = s
                         for k, v in m.groupdict().items():
                             locals[k] = v
                         locals['M'] = m
@@ -165,7 +180,7 @@ class Env:
                         locals['L'] = line
                         locals['L0'] = line.split()
                         for n, s in enumerate(locals['L0'], 1):
-                            locals['L'+str(n)] = s
+                            locals['L' + str(n)] = s
                         locals['LINENO'] = lineno
                         locals['FILENAME'] = filename
 
@@ -176,7 +191,7 @@ class Env:
     def run(self):
 
         locals = globals = {}
-        
+
         script = ""
         if self.scriptfile:
             try:
@@ -184,22 +199,21 @@ class Env:
                     script = f.read()
             except IOError:
                 pass
-        
+
         if script:
-            six.exec_(script+"\n", globals, locals)
+            six.exec_(script + "\n", globals, locals)
 
         six.exec_("import sys, os, re", globals, locals)
         six.exec_("from os import path", globals, locals)
-        
+
         for _import in self.imports:
             six.exec_("import %s" % _import, globals, locals)
-        
+
         for _import in self.imports_str:
             six.exec_("from %s import *" % _import, globals, locals)
-        
+
         if self.begincode:
             six.exec_(self.begincode, globals, locals)
-        
 
         # todo: clean up followings
         if not self.inplace:
@@ -227,7 +241,8 @@ class Env:
                         sys.stdout = writer(open(outfilename, 'w'))
                     else:
                         writer = codecs.getwriter(self.outputenc)
-                        sys.stdout = io.open(outfilename, 'w', encoding=self.outputenc)
+                        sys.stdout = io.open(
+                            outfilename, 'w', encoding=self.outputenc)
                 try:
                     with io.open(f, 'r', encoding=self.inputenc) as input:
                         self._run_script(input, f, globals, locals)
@@ -242,34 +257,40 @@ class Env:
 
         if self.endcode:
             six.exec_(self.endcode, globals, locals)
-        
+
         return locals
 
+
 class ScriptAction(argparse._StoreAction):
+
     def __call__(self, parser, namespace, values, option_string=None):
         if not os.path.exists(values) or not os.path.isfile(values):
             raise argparse.ArgumentError(self, "script file does not exist")
-            
+
         setattr(namespace, self.dest, values)
-    
+
 
 class StatementAction(argparse._AppendAction):
     ARGTYPE = "statement"
+
     def __call__(self, parser, namespace, values, option_string=None):
         self._checkValue(parser, namespace, values, option_string)
-        
-        items = argparse._copy.copy(argparse._ensure_value(namespace, 'statement', []))
+
+        items = argparse._copy.copy(
+            argparse._ensure_value(namespace, 'statement', []))
         items.append((self.ARGTYPE, values))
         setattr(namespace, 'statement', items)
 
     def _checkValue(self, parser, namespace, values, option_string):
         return
-        
+
+
 class PatternAction(StatementAction):
     ARGTYPE = "pattern"
 
     def _checkValue(self, parser, namespace, values, option_string):
         return
+
 
 class ActionAction(StatementAction):
     ARGTYPE = "action"
@@ -281,8 +302,10 @@ class ActionAction(StatementAction):
                 return
             if argtype == StatementAction.ARGTYPE:
                 break
-        raise argparse.ArgumentError(self, "action should be preceded by condition")
-        
+        raise argparse.ArgumentError(
+            self, "action should be preceded by condition")
+
+
 def getargparser():
     if six.PY2:
         def argstr(s):
@@ -292,8 +315,9 @@ def getargparser():
             return str(s)
 
     parser = argparse.ArgumentParser(description=LOGAPPNAME)
-    parser.add_argument('--statement', '-s', action=StatementAction, nargs='+', type=argstr,
-                        help='a pair of pattern and action(s).', metavar=('PATTERN', 'ACTION'))
+    parser.add_argument(
+        '--statement', '-s', action=StatementAction, nargs='+', type=argstr,
+        help='a pair of pattern and action(s).', metavar=('PATTERN', 'ACTION'))
     parser.add_argument('--pattern', '-p', action=PatternAction, type=argstr,
                         help='pattern for trailing action(s)')
     parser.add_argument('--action', '-a', action=ActionAction, type=argstr,
@@ -304,23 +328,28 @@ def getargparser():
                         help='action invoked after input files have been exhausted.')
     parser.add_argument('--ignore-case', '-i', action='store_true',
                         help='ignore case distinctions.')
-    parser.add_argument('--inplace', action='store', type=argstr, metavar='EXTENSION',
-                        help='edit files in-place.')
+    parser.add_argument(
+        '--inplace', action='store', type=argstr, metavar='EXTENSION',
+        help='edit files in-place.')
     parser.add_argument('--input-encoding', '-ie', action='store', type=argstr,
                         help='encoding of input stream.')
-    parser.add_argument('--output-encoding', '-oe', action='store', type=argstr,
-                        help='encoding of output stream.')
-    parser.add_argument('--script-file', '-F', action=ScriptAction, type=argstr,
-                        help='specifies an alternative script file. the default script file is ~/.tserc.')
+    parser.add_argument(
+        '--output-encoding', '-oe', action='store', type=argstr,
+        help='encoding of output stream.')
+    parser.add_argument(
+        '--script-file', '-F', action=ScriptAction, type=argstr,
+        help='specifies an alternative script file. the default script file is ~/.tserc.')
     parser.add_argument('--module', '-m', action='append', type=argstr,
                         help='module to be imported.')
     parser.add_argument('--module-star', '-ms', action='append', type=argstr,
                         help='module to be imported in form of "from modname import *".')
     parser.add_argument('FILE', nargs="*", type=argstr,
                         help='With no FILE, or when FILE is -, read standard input.')
-    parser.add_argument('--version', action='version', version='%(prog)s 0.0.3')
-    
+    parser.add_argument('--version', action='version',
+                        version='%(prog)s 0.0.3')
+
     return parser
+
 
 def main():
     parser = getargparser()
@@ -330,11 +359,11 @@ def main():
     if args.inplace and not args.FILE:
         parser.error("--inplace may not be used with stdin")
 
-    env = Env(args.statement, args.begin, args.end, args.input_encoding, args.output_encoding,
-            args.module, args.module_star, args.script_file, args.inplace, args.ignore_case, 
-            args.FILE)
+    env = Env(
+        args.statement, args.begin, args.end, args.input_encoding, args.output_encoding,
+        args.module, args.module_star, args.script_file, args.inplace, args.ignore_case,
+        args.FILE)
     env.run()
 
 if __name__ == '__main__':
     main()
-
