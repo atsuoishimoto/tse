@@ -19,7 +19,7 @@ to find line contains URL ::
 
 to convert upper case ::
 
-    tse -p ".\*" -a "print L.upper()"
+    tse -p ".*" -a "print L.upper()"
 
 \ 
 
@@ -59,8 +59,7 @@ to convert upper case ::
     --module MODULE, -m MODULE
                           module to be imported.
     --module-star MODULE_STAR, -ms MODULE_STAR
-                          module to be imported in form of "from modname import
-                          \*".
+                          module to be imported in form of "from modname import *".
   
 Patterns and Actions
 -----------------------
@@ -73,9 +72,9 @@ Action arguments in the same pattern are joined with '\n'. So, you can write
 
 ::
 
-    tse -p '.\*' -a 'for c in L:' -a '    print(c)'
+    tse -p '.*' -a 'for c in L:' -a '    print(c)'
 
-    tse -s '.\*' 'for c in L:' '    print(c)'
+    tse -s '.*' 'for c in L:' '    print(c)'
 
 
 
