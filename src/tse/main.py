@@ -86,6 +86,9 @@ class Env:
             return '\n' + ' ' * self.indent 
 
     def build_code(self, code):
+        if not code:
+            code = 'print(L)'
+
         pos = 0
         s = []
         indent = self.sub_indent()
