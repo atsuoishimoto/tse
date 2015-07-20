@@ -23,6 +23,7 @@ setup(
         "Topic :: Utilities",
         "License :: OSI Approved :: MIT License",
     ],
+    packages=find_packages(),
     entry_points={
         'console_scripts': ['tse = tse.main:main']
     },
