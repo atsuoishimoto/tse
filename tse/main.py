@@ -23,6 +23,7 @@ class Env:
     begincode = None
     endcode = None
     inputenc = outputenc = sys.getfilesystemencoding()
+    inputerrors = outputerrors = 'strict'
     encoding = locale.getpreferredencoding()
     scriptfile = SCRIPTFILE
 
@@ -39,9 +40,19 @@ class Env:
         if end:
             self.endcode = self.build_code("\n".join(end))
         if input_encoding:
-            self.inputenc = input_encoding
+            enc, _, errors = (s.strip() for s in input_encoding.partition(':'))
+            if enc:
+                self.inputenc = enc
+            if errors:
+                self.inputerrors = errors
+
         if output_encoding:
-            self.outputenc = output_encoding
+            enc, _, errors = (s.strip() for s in output_encoding.partition(':'))
+            if enc:
+                self.outputenc = enc
+            if errors:
+                self.outputerrors = errors
+
         if script_file:
             self.scriptfile = script_file
         self.inplace = inplace
@@ -179,6 +190,7 @@ def _run_script(env, input, filename, globals, locals):
                 locals['L0'] = line.split()
                 for n, s in enumerate(locals['L0'], 1):
                     locals['L' + str(n)] = s
+                locals['N'] = len(locals['L0'])
                 locals['LINENO'] = lineno
                 locals['FILENAME'] = filename
 
@@ -218,16 +230,16 @@ def run(env):
         if six.PY2:
             writer = codecs.getwriter(env.outputenc)
             writer.encoding = env.outputenc
-            sys.stdout = writer(sys.stdout)
+            sys.stdout = writer(sys.stdout, env.outputerrors)
         else:
             if hasattr(sys.stdout, 'buffer'):
                 writer = codecs.getwriter(env.outputenc)
-                sys.stdout = writer(sys.stdout.buffer)
+                sys.stdout = writer(sys.stdout.buffer, env.outputerrors)
 
     if not env.files:
         reader = codecs.getreader(env.inputenc)
         buf = sys.stdin if six.PY2 else sys.stdin.buffer
-        _run_script(env, reader(buf), '<stdin>', globals, locals)
+        _run_script(env, reader(buf, env.inputerrors), '<stdin>', globals, locals)
     else:
         for f in env.files:
             stdout = sys.stdout
@@ -242,7 +254,7 @@ def run(env):
                     sys.stdout = io.open(
                         outfilename, 'w', encoding=env.outputenc)
             try:
-                with io.open(f, 'r', encoding=env.inputenc) as input:
+                with io.open(f, 'r', encoding=env.inputenc, errors=env.inputerrors) as input:
                     _run_script(env, input, f, globals, locals)
             finally:
                 if env.inplace:

@@ -1,3 +1,4 @@
+
 tse - Python Stream Scripting
 =============================
 
@@ -122,6 +123,8 @@ Following variables are can be used within action statement.
 :L0: Current line.
 
 :L1, L2: Fields of the current line separeted by whitespace.
+
+:N: Number of fileds.
 
 :S: Part of Text matched to condition regex.
 
