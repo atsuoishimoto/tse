@@ -24,6 +24,9 @@ to convert upper case ::
 
 \ 
 
+Command line options
+-----------------------
+
 
 ::
 
