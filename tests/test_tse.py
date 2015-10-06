@@ -180,6 +180,15 @@ class TestIndent(_TestBase):
         ret = out.getvalue()[:-1]
         self.failUnlessEqual(ret, 'a\nbb\nc\ndd\ne\nff\ng')
 
+    def testNewline(self):
+        sys.stdout = out = StringIO()
+        self._run(["-s", ".*",
+                   "if 1:{{print(1){{}}print(2)}}"],
+                  u"abcdefg")
+
+        ret = out.getvalue()[:-1]
+        self.failUnlessEqual(ret, '1\n2')
+
     def testString(self):
         sys.stdout = out = StringIO()
         self._run(["-s", ".*",

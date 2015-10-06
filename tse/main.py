@@ -95,14 +95,16 @@ class Env:
         flags = re.I if self.ignore_case else 0
         return re.compile(regex, flags)
 
-    RE_INDENT = re.compile(r'{{|}}')
+    RE_INDENT = re.compile(r'{{}}|{{|}}')
     RE_TOKEN = re.compile(r'"""|\'\'\'|"|\'|#')
 
     class sub_indent:
         indent = 0
 
         def __call__(self, m):
-            if m.group() == '{{':
+            if m.group() == '{{}}':
+                pass
+            elif m.group() == '{{':
                 self.indent += 4
             else:
                 self.indent -= 4
