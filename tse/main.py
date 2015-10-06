@@ -360,7 +360,7 @@ def getargparser():
     parser.add_argument('FILE', nargs="*", type=argstr,
                         help='With no FILE, or when FILE is -, read standard input.')
     parser.add_argument('--version', action='version',
-                        version='%(prog)s 0.0.6')
+                        version='%(prog)s 0.0.7')
 
     return parser
 
