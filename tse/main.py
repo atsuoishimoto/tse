@@ -47,7 +47,8 @@ class Env:
                 self.inputerrors = errors
 
         if output_encoding:
-            enc, _, errors = (s.strip() for s in output_encoding.partition(':'))
+            enc, _, errors = (s.strip()
+                              for s in output_encoding.partition(':'))
             if enc:
                 self.outputenc = enc
             if errors:
@@ -169,6 +170,7 @@ class Env:
         _Transform().visit(exprs)
         return compile(exprs, filename, "exec")
 
+
 def _run_script(env, input, filename, globals, locals):
     for lineno, line in enumerate(input, 1):
         line = line.rstrip(u"\n")
@@ -194,6 +196,7 @@ def _run_script(env, input, filename, globals, locals):
                 six.exec_(c, globals, locals)
 
                 break
+
 
 def run(env):
 
@@ -237,7 +240,8 @@ def run(env):
         if not env.files:
             reader = codecs.getreader(env.inputenc)
             buf = sys.stdin if six.PY2 else sys.stdin.buffer
-            _run_script(env, reader(buf, env.inputerrors), '<stdin>', globals, locals)
+            _run_script(env, reader(buf, env.inputerrors),
+                        '<stdin>', globals, locals)
         else:
             for f in env.files:
                 stdout = sys.stdout
