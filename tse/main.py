@@ -173,9 +173,6 @@ def _run_script(env, input, filename, globals, locals):
     for lineno, line in enumerate(input, 1):
         line = line.rstrip(u"\n")
         for r, c in env.actions:
-            if not c:
-                continue
-
             m = r.search(line)
             if m:
                 S = (m.group(),) + m.groups()
@@ -226,44 +223,45 @@ def run(env):
         six.exec_(env.begincode, globals, locals)
 
     # todo: clean up followings
-    if not env.inplace:
-        if six.PY2:
-            writer = codecs.getwriter(env.outputenc)
-            writer.encoding = env.outputenc
-            sys.stdout = writer(sys.stdout, env.outputerrors)
-        else:
-            if hasattr(sys.stdout, 'buffer'):
+    if env.actions:
+        if not env.inplace:
+            if six.PY2:
                 writer = codecs.getwriter(env.outputenc)
-                sys.stdout = writer(sys.stdout.buffer, env.outputerrors)
+                writer.encoding = env.outputenc
+                sys.stdout = writer(sys.stdout, env.outputerrors)
+            else:
+                if hasattr(sys.stdout, 'buffer'):
+                    writer = codecs.getwriter(env.outputenc)
+                    sys.stdout = writer(sys.stdout.buffer, env.outputerrors)
 
-    if not env.files:
-        reader = codecs.getreader(env.inputenc)
-        buf = sys.stdin if six.PY2 else sys.stdin.buffer
-        _run_script(env, reader(buf, env.inputerrors), '<stdin>', globals, locals)
-    else:
-        for f in env.files:
-            stdout = sys.stdout
-            if env.inplace:
-                outfilename = '%s%s.%s' % (f, env.inplace, os.getpid())
-                if six.PY2:
-                    writer = codecs.getwriter(env.outputenc)
-                    writer.encoding = env.outputenc
-                    sys.stdout = writer(open(outfilename, 'w'))
-                else:
-                    writer = codecs.getwriter(env.outputenc)
-                    sys.stdout = io.open(
-                        outfilename, 'w', encoding=env.outputenc)
-            try:
-                with io.open(f, 'r', encoding=env.inputenc, errors=env.inputerrors) as input:
-                    _run_script(env, input, f, globals, locals)
-            finally:
+        if not env.files:
+            reader = codecs.getreader(env.inputenc)
+            buf = sys.stdin if six.PY2 else sys.stdin.buffer
+            _run_script(env, reader(buf, env.inputerrors), '<stdin>', globals, locals)
+        else:
+            for f in env.files:
+                stdout = sys.stdout
                 if env.inplace:
-                    sys.stdout.close()
-                    sys.stdout = stdout
+                    outfilename = '%s%s.%s' % (f, env.inplace, os.getpid())
+                    if six.PY2:
+                        writer = codecs.getwriter(env.outputenc)
+                        writer.encoding = env.outputenc
+                        sys.stdout = writer(open(outfilename, 'w'))
+                    else:
+                        writer = codecs.getwriter(env.outputenc)
+                        sys.stdout = io.open(
+                            outfilename, 'w', encoding=env.outputenc)
+                try:
+                    with io.open(f, 'r', encoding=env.inputenc, errors=env.inputerrors) as input:
+                        _run_script(env, input, f, globals, locals)
+                finally:
+                    if env.inplace:
+                        sys.stdout.close()
+                        sys.stdout = stdout
 
-            if env.inplace:
-                shutil.move(f, '%s%s' % (f, env.inplace))
-                shutil.move(outfilename, f)
+                if env.inplace:
+                    shutil.move(f, '%s%s' % (f, env.inplace))
+                    shutil.move(outfilename, f)
 
     if env.endcode:
         six.exec_(env.endcode, globals, locals)
@@ -364,8 +362,6 @@ def getargparser():
 def main():
     parser = getargparser()
     args = parser.parse_args()
-    if not args.statement:
-        parser.error("statement required")
     if args.inplace and not args.FILE:
         parser.error("--inplace may not be used with stdin")
 
