@@ -57,7 +57,7 @@ Command line options
                           encoding of input stream.
     --output-encoding OUTPUT_ENCODING, -oe OUTPUT_ENCODING
                           encoding of output stream.
-    --script-file SCRIPT_FILE, -F SCRIPT_FILE
+    --script-file SCRIPT_FILE, -f SCRIPT_FILE
                           specifies an alternative script file. the default
                           script file is ~/.tserc.
     --module MODULE, -m MODULE

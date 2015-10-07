@@ -351,7 +351,7 @@ def getargparser():
         '--output-encoding', '-oe', action='store', type=argstr,
         help='encoding of output stream.')
     parser.add_argument(
-        '--script-file', '-F', action=ScriptAction, type=argstr,
+        '--script-file', '-f', action=ScriptAction, type=argstr,
         help='specifies an alternative script file. the default script file is ~/.tserc.')
     parser.add_argument('--module', '-m', action='append', type=argstr,
                         help='module to be imported.')
@@ -360,7 +360,7 @@ def getargparser():
     parser.add_argument('FILE', nargs="*", type=argstr,
                         help='With no FILE, or when FILE is -, read standard input.')
     parser.add_argument('--version', action='version',
-                        version='%(prog)s 0.0.7')
+                        version='%(prog)s 0.0.8')
 
     return parser
 

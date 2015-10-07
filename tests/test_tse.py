@@ -128,7 +128,7 @@ class TestExec(_TestBase):
             testfile.write("script_a=100")
             testfile.close()
 
-            globals = self._run(["-s", "\w+", "-F", filename], u"")
+            globals = self._run(["-s", "\w+", "-f", filename], u"")
             self.failUnlessEqual(globals['script_a'], 100)
         finally:
             os.unlink(filename)
