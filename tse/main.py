@@ -36,9 +36,9 @@ class Env:
                             for (r, c) in self._parse_statement(statement)]
 
         if begin:
-            self.begincode = self.build_code("\n".join(begin))
+            self.begincode = self.build_code("\n".join("\n".join(l) for l in begin))
         if end:
-            self.endcode = self.build_code("\n".join(end))
+            self.endcode = self.build_code("\n".join("\n".join(l) for l in end))
         if input_encoding:
             enc, _, errors = (s.strip() for s in input_encoding.partition(':'))
             if enc:
@@ -336,9 +336,9 @@ def getargparser():
                         help='pattern for trailing action(s)')
     parser.add_argument('--action', '-a', action=ActionAction, type=argstr,
                         help='action to be executed.')
-    parser.add_argument('--begin', '-b', action='append', type=argstr,
+    parser.add_argument('--begin', '-b', action='append', nargs='+', type=argstr,
                         help='action invoked before input files have been read.')
-    parser.add_argument('--end', '-e', action='append', type=argstr,
+    parser.add_argument('--end', '-e', action='append', nargs='+', type=argstr,
                         help='action invoked after input files have been exhausted.')
     parser.add_argument('--ignore-case', '-i', action='store_true',
                         help='ignore case distinctions.')
@@ -360,7 +360,7 @@ def getargparser():
     parser.add_argument('FILE', nargs="*", type=argstr,
                         help='With no FILE, or when FILE is -, read standard input.')
     parser.add_argument('--version', action='version',
-                        version='%(prog)s 0.0.8')
+                        version='%(prog)s 0.0.9')
 
     return parser
 

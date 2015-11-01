@@ -82,12 +82,12 @@ class TestArgs(_TestBase):
 class TestExec(_TestBase):
 
     def testBegin(self):
-        globals = self._run(["-b", "a=100", "-b", "b=200"], u"")
+        globals = self._run(["-b", "a=100", "b=200"], u"")
         self.failUnlessEqual(globals['a'], 100)
         self.failUnlessEqual(globals['b'], 200)
 
     def testEnd(self):
-        globals = self._run(["-e", "a=100", "-e", "b=200"], u"")
+        globals = self._run(["-e", "a=100", "b=200"], u"")
         self.failUnlessEqual(globals['a'], 100)
         self.failUnlessEqual(globals['b'], 200)
 
