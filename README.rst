@@ -53,6 +53,10 @@ Command line options
     --begin BEGIN, -b BEGIN
                           action invoked before input files have been read.
     --end END, -e END     action invoked after input files have been exhausted.
+    --ignore-case, -i     ignore case distinctions.
+    --field-separator FIELD_SEPARATOR, -F FIELD_SEPARATOR
+                        regular expression used to separate fields.
+    --inplace EXTENSION   edit files in-place.
     --input-encoding INPUT_ENCODING, -ie INPUT_ENCODING
                           encoding of input stream.
     --output-encoding OUTPUT_ENCODING, -oe OUTPUT_ENCODING

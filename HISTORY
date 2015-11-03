@@ -1,3 +1,20 @@
+0.0.10 - 2015/11/03
+-------------------
+
+- New option: --field-separator
+
+
+0.0.9 - 2015/11/01
+-------------------
+
+--begin/--end accepts multiple arguments.
+
+
+0.0.8 - 2015/10/06
+-------------------
+
+Failed to upload file to PyPI.
+
 0.0.7 - 2015/10/06
 -------------------
 

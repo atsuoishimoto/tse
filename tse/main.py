@@ -346,7 +346,7 @@ def getargparser():
                         help='ignore case distinctions.')
     parser.add_argument(
         '--field-separator', '-F', action='store', type=argstr, default=r'\s+',
-        help='separator for splitting the line.')
+        help='regular expression used to separate fields.')
     parser.add_argument(
         '--inplace', action='store', type=argstr, metavar='EXTENSION',
         help='edit files in-place.')
@@ -365,7 +365,7 @@ def getargparser():
     parser.add_argument('FILE', nargs="*", type=argstr,
                         help='With no FILE, or when FILE is -, read standard input.')
     parser.add_argument('--version', action='version',
-                        version='%(prog)s 0.0.9')
+                        version='%(prog)s 0.0.10')
 
     return parser
 
