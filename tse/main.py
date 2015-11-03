@@ -190,7 +190,7 @@ def _run_script(env, input, filename, globals, locals):
                 locals['M'] = m
 
                 locals['L'] = line
-                locals['L0'] = fs.split(line)
+                locals['L0'] = fs.split(line.strip())
                 for n, s in enumerate(locals['L0'], 1):
                     locals['L' + str(n)] = s
                 locals['N'] = len(locals['L0'])

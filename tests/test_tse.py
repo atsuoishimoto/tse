@@ -176,6 +176,10 @@ class TestSeparator(_TestBase):
             ["-s", ".*", "a=L0", "-F", "\\t"], u"A B C\tD\tE\tF")
         self.failUnlessEqual(globals['a'], [u"A B C", u"D", u"E", u"F"])
 
+        globals = self._run(
+            ["-s", ".*", "a=L0"], u"   A B C\tD\tE\t F    ")
+        self.failUnlessEqual(globals['a'], [u"A", u"B", u"C", u"D", u"E", u"F"])
+
 
 class TestIndent(_TestBase):
 
