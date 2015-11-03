@@ -44,7 +44,7 @@ class _TestBase(unittest.TestCase):
         env = tse.main.Env(args.statement, args.begin, args.end,
                            args.input_encoding, args.output_encoding, args.module,
                            args.module_star, args.script_file, args.inplace, args.ignore_case,
-                           [self.testfilename])
+                           args.field_separator, [self.testfilename])
 
         return tse.main.run(env)
 
@@ -167,6 +167,14 @@ class TestInplace(_TestBase):
         self.failUnlessEqual(open(self.testfilename + '.bak', 'rb').read(),
                              u"\N{HIRAGANA LETTER A}".encode('utf-8'))
         os.unlink(self.testfilename + '.bak')
+
+
+class TestSeparator(_TestBase):
+
+    def testSeparator(self):
+        globals = self._run(
+            ["-s", ".*", "a=L0", "-F", "\\t"], u"A B C\tD\tE\tF")
+        self.failUnlessEqual(globals['a'], [u"A B C", u"D", u"E", u"F"])
 
 
 class TestIndent(_TestBase):

@@ -28,8 +28,9 @@ class Env:
     scriptfile = SCRIPTFILE
 
     def __init__(self, statement, begin, end, input_encoding, output_encoding,
-                 module, module_star, script_file, inplace, ignore_case, files):
+                 module, module_star, script_file, inplace, ignore_case, field_separator, files):
         self.ignore_case = ignore_case
+        self.field_separator = field_separator
 
         if statement:
             self.actions = [(self.build_re(r), self.build_code(c))
@@ -174,6 +175,7 @@ class Env:
 
 
 def _run_script(env, input, filename, globals, locals):
+    fs = re.compile(env.field_separator)
     for lineno, line in enumerate(input, 1):
         line = line.rstrip(u"\n")
         for r, c in env.actions:
@@ -188,7 +190,7 @@ def _run_script(env, input, filename, globals, locals):
                 locals['M'] = m
 
                 locals['L'] = line
-                locals['L0'] = line.split()
+                locals['L0'] = fs.split(line)
                 for n, s in enumerate(locals['L0'], 1):
                     locals['L' + str(n)] = s
                 locals['N'] = len(locals['L0'])
@@ -343,6 +345,9 @@ def getargparser():
     parser.add_argument('--ignore-case', '-i', action='store_true',
                         help='ignore case distinctions.')
     parser.add_argument(
+        '--field-separator', '-F', action='store', type=argstr, default=r'\s+',
+        help='separator for splitting the line.')
+    parser.add_argument(
         '--inplace', action='store', type=argstr, metavar='EXTENSION',
         help='edit files in-place.')
     parser.add_argument('--input-encoding', '-ie', action='store', type=argstr,
@@ -374,7 +379,7 @@ def main():
     env = Env(
         args.statement, args.begin, args.end, args.input_encoding, args.output_encoding,
         args.module, args.module_star, args.script_file, args.inplace, args.ignore_case,
-        args.FILE)
+        args.field_separator, args.FILE)
     run(env)
 
 if __name__ == '__main__':
