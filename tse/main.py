@@ -175,7 +175,8 @@ class Env:
 
 
 def _run_script(env, input, filename, globals, locals):
-    fs = re.compile(env.field_separator)
+    fs = re.compile(env.field_separator) if env.field_separator else None
+
     for lineno, line in enumerate(input, 1):
         line = line.rstrip(u"\n")
         for r, c in env.actions:
@@ -190,7 +191,12 @@ def _run_script(env, input, filename, globals, locals):
                 locals['M'] = m
 
                 locals['L'] = line
-                locals['L0'] = fs.split(line.strip())
+
+                if fs:
+                    locals['L0'] = fs.split(line)
+                else:
+                    locals['L0'] = line.split()
+
                 for n, s in enumerate(locals['L0'], 1):
                     locals['L' + str(n)] = s
                 locals['N'] = len(locals['L0'])
@@ -345,7 +351,7 @@ def getargparser():
     parser.add_argument('--ignore-case', '-i', action='store_true',
                         help='ignore case distinctions.')
     parser.add_argument(
-        '--field-separator', '-F', action='store', type=argstr, default=r'\s+',
+        '--field-separator', '-F', action='store', type=argstr,
         help='regular expression used to separate fields.')
     parser.add_argument(
         '--inplace', action='store', type=argstr, metavar='EXTENSION',
