@@ -12,6 +12,7 @@ import six
 import io
 import shutil
 import re
+import collections
 
 SHORTAPPNAME = "tse"
 LOGAPPNAME = "Text Stream Editor in Python"
@@ -152,7 +153,10 @@ class Env:
             s.append(self.RE_INDENT.sub(indent, code[pos:]))
 
         code = ''.join(s)
+
+        filename = u"<tse>"
         if six.PY3:
+            return compile(code, filename, "exec")
             return code
 
         if not code:
@@ -168,14 +172,26 @@ class Env:
                     node.s = s.encode(enc)
                 return node
 
-        filename = u"<tse>"
         exprs = ast.parse(code, filename)
         _Transform().visit(exprs)
         return compile(exprs, filename, "exec")
 
 
+class VarnameDict(collections.defaultdict):
+    def __init__(self, varname):
+        self.varname = varname
+        super(VarnameDict, self).__init__()
+
+    def __missing__(self, key):
+        ret = self.varname+str(key)
+        self[key] = ret
+        return ret
+
 def _run_script(env, input, filename, globals, locals):
     fs = re.compile(env.field_separator) if env.field_separator else None
+
+    FIELD_VARS = VarnameDict('L')
+    GROUP_VARS = VarnameDict('S')
 
     for lineno, line in enumerate(input, 1):
         line = line.rstrip(u"\n")
@@ -185,7 +201,7 @@ def _run_script(env, input, filename, globals, locals):
                 S = (m.group(),) + m.groups()
                 locals['S'] = S
                 for n, s in enumerate(S):
-                    locals['S' + str(n)] = s
+                    locals[GROUP_VARS[n]] = s
                 for k, v in m.groupdict().items():
                     locals[k] = v
                 locals['M'] = m
@@ -198,7 +214,8 @@ def _run_script(env, input, filename, globals, locals):
                     locals['L0'] = line.split()
 
                 for n, s in enumerate(locals['L0'], 1):
-                    locals['L' + str(n)] = s
+                    locals[FIELD_VARS[n]] = s
+
                 locals['N'] = len(locals['L0'])
                 locals['LINENO'] = lineno
                 locals['FILENAME'] = filename
@@ -244,14 +261,16 @@ def run(env):
                 sys.stdout = writer(sys.stdout, env.outputerrors)
             else:
                 if hasattr(sys.stdout, 'buffer'):
-                    writer = codecs.getwriter(env.outputenc)
-                    sys.stdout = writer(sys.stdout.buffer, env.outputerrors)
+                    sys.stdout = io.open(os.dup(sys.stdout.buffer.fileno()), 'w', 
+                        encoding=env.outputenc, errors=env.outputerrors)
 
         if not env.files:
-            reader = codecs.getreader(env.inputenc)
-            buf = sys.stdin if six.PY2 else sys.stdin.buffer
-            _run_script(env, reader(buf, env.inputerrors),
-                        '<stdin>', globals, locals)
+            if six.PY2:
+                reader = codecs.getreader(env.inputenc)(sys.stdin, env.inputerrors)
+            else:
+                reader = io.open(os.dup(sys.stdin.buffer.fileno()), 
+                    encoding=env.inputenc, errors=env.inputerrors)
+            _run_script(env, reader, '<stdin>', globals, locals)
         else:
             for f in env.files:
                 stdout = sys.stdout
@@ -262,7 +281,6 @@ def run(env):
                         writer.encoding = env.outputenc
                         sys.stdout = writer(open(outfilename, 'w'))
                     else:
-                        writer = codecs.getwriter(env.outputenc)
                         sys.stdout = io.open(
                             outfilename, 'w', encoding=env.outputenc)
                 try:
@@ -371,7 +389,7 @@ def getargparser():
     parser.add_argument('FILE', nargs="*", type=argstr,
                         help='With no FILE, or when FILE is -, read standard input.')
     parser.add_argument('--version', action='version',
-                        version='%(prog)s 0.0.11')
+                        version='%(prog)s 0.0.12')
 
     return parser
 
