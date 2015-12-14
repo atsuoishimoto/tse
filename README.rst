@@ -111,16 +111,6 @@ Variables
 
 Following variables are can be used within action statement.
 
-:variable: values
-
-:sys: Python sys module
-
-:os: Python os module
-
-:path: Python os.path module
-
-:re: python re module
-
 :FILENAME: The name of file currently reading.
 
 :LINENO: Line numberof the current line.
@@ -140,6 +130,17 @@ Following variables are can be used within action statement.
 :(name): If condition regex has group names defined by '(?P<name>)', sub-string could be referenced by variable 'name'.
 
 :M: Match object
+
+
+Pre-imported modules
+---------------------
+
+Following modules are imported as follows::
+
+    import sys, os, re
+    from os import path
+    from glob import *
+    from pathlib import *  # Only if pathlib is installed.
 
 
 Script file

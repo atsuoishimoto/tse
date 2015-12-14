@@ -242,6 +242,11 @@ def run(env):
 
     six.exec_("import sys, os, re", globals, locals)
     six.exec_("from os import path", globals, locals)
+    six.exec_("from glob import *", globals, locals)
+    try:
+        six.exec_("from pathlib import *", globals, locals)
+    except ImportError:
+        pass
 
     for _import in env.imports:
         six.exec_("import %s" % _import, globals, locals)
