@@ -129,8 +129,9 @@ Following variables are can be used within action statement.
 
 :(name): If condition regex has group names defined by '(?P<name>)', sub-string could be referenced by variable 'name'.
 
-:M: Match object
+:M: Match object.
 
+:E: Function to call subprocess.check_output(). ``E('ls ~')`` is equevalent to ``subprocess.check_output('ls ~', shell=True, universal_newline=True)``.
 
 Pre-imported modules
 ---------------------
