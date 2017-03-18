@@ -164,7 +164,7 @@ Sum all numeric characters in all lines::
          -s "\d+" "all+=sum(int(s) for s in re.findall(r"\d+", L)))" \
          -e "print(all)"
 
-Find all extention parts in current directory::
+Find all extension parts in current directory::
 
     find . | tse -s ".*" "print path.splitext(L)[1]"
 
