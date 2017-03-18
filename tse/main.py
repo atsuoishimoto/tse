@@ -38,9 +38,10 @@ class Env:
                             for (r, c) in self._parse_statement(statement)]
 
         if begin:
-            self.begincode = self.build_code("\n".join("\n".join(l) for l in begin))
+            self.begincode = self.build_code(s for b in begin for s in b)
         if end:
-            self.endcode = self.build_code("\n".join("\n".join(l) for l in end))
+            self.endcode = self.build_code(s for e in end for s in e)
+
         if input_encoding:
             enc, _, errors = (s.strip() for s in input_encoding.partition(':'))
             if enc:
@@ -69,14 +70,14 @@ class Env:
         for argtype, values in statement:
             if argtype == StatementAction.ARGTYPE:
                 if pattern is not None:
-                    yield pattern, "\n".join(actions)
+                    yield pattern, actions
                     pattern = None
                     actions = []
-                yield values[0], "\n".join(values[1:])
+                yield values[0], values[1:]
 
             elif argtype == PatternAction.ARGTYPE:
                 if pattern is not None:
-                    yield pattern, "\n".join(actions)
+                    yield pattern, actions
                     pattern = None
                     actions = []
                 pattern = values
@@ -89,7 +90,7 @@ class Env:
                 raise RuntimeError
 
         if pattern is not None:
-            yield pattern, "\n".join(actions)
+            yield pattern, actions
 
     def build_re(self, regex):
         if not regex:
@@ -114,52 +115,56 @@ class Env:
                     raise ValueError('Indent underflow')
             return '\n' + ' ' * self.indent
 
-    def build_code(self, code):
-        if not code:
-            code = 'print(L)'
-
-        pos = 0
-        s = []
+    def build_code(self, codes):
+        converted = []
         indent = self.sub_indent()
-        while True:
-            m = self.RE_TOKEN.search(code, pos)
-            if not m:
-                break
-            token_start, token_end = m.span()
-            if pos != token_start:
-                s.append(self.RE_INDENT.sub(indent, code[pos:token_start]))
-                pos = token_start
-
-            grp = m.group()
-            end_token = '\n' if grp.startswith('#') else grp
-            end = re.compile(r'(\\.)|(%s)' % end_token)
+        for code in codes:
+            code = ' ' * indent.indent + code + '\n'
+            pos = 0
+            s = []
             while True:
-                m = end.search(code, token_end)
-                if m:
-                    token_end = m.end()
-                    if m.group().startswith('\\'):
-                        pos = token_end
-                        continue
-                    else:
-                        s.append(code[token_start:token_end])
-                        pos = token_end
-                        break
-                else:
-                    s.append(code[token_start:])
-                    pos = len(code)
+                m = self.RE_TOKEN.search(code, pos)
+                if not m:
                     break
+                token_start, token_end = m.span()
+                if pos != token_start:
+                    s.append(self.RE_INDENT.sub(indent, code[pos:token_start]))
+                    pos = token_start
 
-        if pos != len(code):
-            s.append(self.RE_INDENT.sub(indent, code[pos:]))
+                grp = m.group()
+                end_token = '\n' if grp.startswith('#') else grp
+                end = re.compile(r'(\\.)|(%s)' % end_token)
+                while True:
+                    m = end.search(code, token_end)
+                    if m:
+                        token_end = m.end()
+                        if m.group().startswith('\\'):
+                            pos = token_end
+                            continue
+                        else:
+                            s.append(code[token_start:token_end])
+                            pos = token_end
+                            break
+                    else:
+                        s.append(code[token_start:])
+                        pos = len(code)
+                        break
 
-        code = ''.join(s)
+            if pos != len(code):
+                s.append(self.RE_INDENT.sub(indent, code[pos:]))
 
+            code = ''.join(s)
+            converted.append(code)
+
+        result = "\n".join(converted)
+        if not result.strip():
+            result = 'print(L)'
+        
         filename = u"<tse>"
         if six.PY3:
-            return compile(code, filename, "exec")
-            return code
+            return compile(result, filename, "exec")
 
-        if not code:
+        if not result:
             return None
 
         enc = self.encoding
@@ -172,7 +177,7 @@ class Env:
                     node.s = s.encode(enc)
                 return node
 
-        exprs = ast.parse(code, filename)
+        exprs = ast.parse(result, filename)
         _Transform().visit(exprs)
         return compile(exprs, filename, "exec")
 

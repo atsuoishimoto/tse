@@ -201,6 +201,15 @@ class TestIndent(_TestBase):
         ret = out.getvalue()[:-1]
         self.failUnlessEqual(ret, '1\n2')
 
+    def testMultiline(self):
+        for opt in [["-s", ".*"], ["-b"], ["-e"]]:
+            sys.stdout = out = StringIO()
+            self._run(opt + ["for i in range(1):{{", "print(i)", "}}"],
+                      u"abcdefg")
+
+            ret = out.getvalue()
+            self.failUnlessEqual(ret, '0\n')
+
     def testString(self):
         sys.stdout = out = StringIO()
         self._run(["-s", ".*",
