@@ -133,6 +133,9 @@ class TestExec(_TestBase):
         finally:
             os.unlink(filename)
 
+    def testShell(self):
+        globals = self._run(["-e", "a=E('echo abc')"], u"")
+        self.failUnlessEqual(globals['a'], 'abc\n')
 
 class TestEncoding(_TestBase):
 

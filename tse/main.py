@@ -13,6 +13,7 @@ import io
 import shutil
 import re
 import collections
+import subprocess
 
 SHORTAPPNAME = "tse"
 LOGAPPNAME = "Text Stream Editor in Python"
@@ -192,6 +193,7 @@ class VarnameDict(collections.defaultdict):
         self[key] = ret
         return ret
 
+
 def _run_script(env, input, filename, globals, locals):
     fs = re.compile(env.field_separator) if env.field_separator else None
 
@@ -229,6 +231,8 @@ def _run_script(env, input, filename, globals, locals):
 
                 break
 
+def E(cmd):
+    return subprocess.check_output(cmd, shell=True, universal_newlines=True)
 
 def run(env):
 
@@ -259,6 +263,8 @@ def run(env):
     for _import in env.imports_str:
         six.exec_("from %s import *" % _import, globals, locals)
 
+    globals['E'] = E
+    
     if env.begincode:
         six.exec_(env.begincode, globals, locals)
 
