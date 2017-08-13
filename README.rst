@@ -4,15 +4,11 @@ tse - Python Stream Scripting
 
 tse processes text input stream with Python expressions. Like AWK, tse command line option is a series of pair of condition and action:
 
-    tse -p COND1 -a ACTION1 -p COND2 -p ACTION2 -a ACTION3
-
-or 
-
     tse -s COND1 ACTION1 -s COND2 ACTION2 ACTION3
 
 For example, to find lines starts with 'abc' ::
 
-    tse -p "^abc" -a "print L"
+    tse -s "^abc" "print L"
 
 to find line contains URL ::
 
@@ -30,8 +26,8 @@ Command line options
 
 ::
 
-  usage: tse [-h] [--statement PATTERN [ACTION ...]] [--pattern PATTERN]
-             [--action ACTION] [--begin BEGIN] [--end END]
+  usage: tse [-h] [--statement PATTERN [ACTION ...]] 
+             [--begin BEGIN] [--end END]
              [--input-encoding INPUT_ENCODING]
              [--output-encoding OUTPUT_ENCODING] [--script-file SCRIPT_FILE]
              [--module MODULE] [--module-star MODULE_STAR]
@@ -46,10 +42,6 @@ Command line options
     -h, --help            show this help message and exit
     --statement PATTERN [ACTION ...], -s PATTERN [ACTION ...]
                           a pair of pattern and action(s).
-    --pattern PATTERN, -p PATTERN
-                          pattern for trailing action(s)
-    --action ACTION, -a ACTION
-                          action to be executed.
     --begin BEGIN, -b BEGIN
                           action invoked before input files have been read.
     --end END, -e END     action invoked after input files have been exhausted.
@@ -133,6 +125,9 @@ Following variables are can be used within action statement.
 
 :E: Function to call subprocess.check_output(). ``E('ls ~')`` is equevalent to ``subprocess.check_output('ls ~', shell=True, universal_newline=True)``.
 
+:P: (Python3 only) Function to call print(). ``P('STRING')`` is equevalent to ``print('STRING')``.
+
+
 Pre-imported modules
 ---------------------
 
@@ -148,6 +143,16 @@ Script file
 -----------
 
 If the file ~/.tserc exists, the file is execused at beginning. In the script file, you can import your faivorite modules, or write convenient functions you like. The values defined in the scipt file are accessible by actions specifyed in command options.
+
+
+Command substitution
+----------------------
+
+In Python3, string within backticks are executed as command. The string **\`ls ~\`** is equivaent to ``subprocess.check_output('ls ~', shell=True, universal_newline=True)``.
+
+In Python 3.6 or later, ``f`` prefix is supported::
+
+    ls | tse -s '\.txt' 'P(f`cat {L}`)'
 
 
 Examples
