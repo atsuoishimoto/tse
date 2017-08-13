@@ -213,6 +213,7 @@ class TestIndent(_TestBase):
             ret = out.getvalue()
             self.failUnlessEqual(ret, '0\n')
 
+class TestString(_TestBase):
     def testString(self):
         sys.stdout = out = StringIO()
         self._run(["-s", ".*",
@@ -221,6 +222,25 @@ class TestIndent(_TestBase):
 
         ret = out.getvalue()[:-1]
         self.failUnlessEqual(ret, 'abcdefg"')
+
+    def testCommand(self):
+        sys.stdout = out = StringIO()
+        self._run(["-s", ".*",
+                   'print(`echo 12345`)'],
+                  u"abcdefg")
+
+        ret = out.getvalue()[:-1]
+        self.failUnlessEqual(ret, '12345\n')
+
+    def testfCommand(self):
+        sys.stdout = out = StringIO()
+        self._run(["-s", ".*",
+                   'print(f`echo {L}`)'],
+                  u"abcdefg")
+
+        ret = out.getvalue()[:-1]
+        self.failUnlessEqual(ret, 'abcdefg\n')
+
 
 if __name__ == '__main__':
     unittest.main()

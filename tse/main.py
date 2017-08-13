@@ -19,6 +19,7 @@ SHORTAPPNAME = "tse"
 LOGAPPNAME = "Text Stream Editor in Python"
 SCRIPTFILE = os.path.join(os.path.expanduser(u"~"), ".tserc")
 
+PY3 = sys.version_info[0] == 3
 
 class Env:
     actions = ()
@@ -100,7 +101,7 @@ class Env:
         return re.compile(regex, flags)
 
     RE_INDENT = re.compile(r'{{}}|{{|}}')
-    RE_TOKEN = re.compile(r'"""|\'\'\'|"|\'|#')
+    RE_TOKEN = re.compile(r'([fFrR]*`|"""|\'\'\'|"|\')|#')
 
     class sub_indent:
         indent = 0
@@ -133,17 +134,23 @@ class Env:
                     pos = token_start
 
                 grp = m.group()
-                end_token = '\n' if grp.startswith('#') else grp
+                end_token = '\n' if grp.startswith('#') else grp[-1]
                 end = re.compile(r'(\\.)|(%s)' % end_token)
                 while True:
-                    m = end.search(code, token_end)
-                    if m:
-                        token_end = m.end()
-                        if m.group().startswith('\\'):
+                    m_end = end.search(code, token_end)
+                    if m_end:
+                        token_end = m_end.end()
+                        if m_end.group().startswith('\\'):
                             pos = token_end
                             continue
                         else:
-                            s.append(code[token_start:token_end])
+                            if PY3 and end_token == '`':
+                                cmd = repr(code[token_start+len(grp):token_end-1])
+                                cmd = code[token_start:token_start+len(grp)-1] + cmd
+                                s.append('E(%s)' % cmd)
+                            else:
+                                s.append(code[token_start:token_end])
+
                             pos = token_end
                             break
                     else:
@@ -252,6 +259,9 @@ def run(env):
     six.exec_("import sys, os, re", globals, locals)
     six.exec_("from os import path", globals, locals)
     six.exec_("from glob import *", globals, locals)
+    if PY3:
+        six.exec_("P = print", globals, locals)
+
     try:
         six.exec_("from pathlib import *", globals, locals)
     except ImportError:
