@@ -16,7 +16,6 @@ setup(
     url="https://github.com/atsuoishimoto/tse",
     long_description=read('README.rst'),
     classifiers=[
-        "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",
         "Development Status :: 5 - Production/Stable",
         "Topic :: Text Processing :: Filters",
@@ -27,6 +26,10 @@ setup(
     entry_points={
         'console_scripts': ['tse = tse.main:main']
     },
-    install_requires=["argparse", "six"],
+    install_requires=["six"],
     test_suite="tests",
+    project_urls={
+        'Source': 'https://github.com/atsuoishimoto/tse',
+    },
+    python_requires='>=3.4',
 )

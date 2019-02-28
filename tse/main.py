@@ -386,9 +386,9 @@ def getargparser():
         '--statement', '-s', action=StatementAction, nargs='+', type=argstr,
         help='a pair of pattern and action(s).', metavar=('PATTERN', 'ACTION'))
     parser.add_argument('--pattern', '-p', action=PatternAction, type=argstr,
-                        help='(DEPRECATED) pattern for trailing action(s)')
+                        help=argparse.SUPPRESS)
     parser.add_argument('--action', '-a', action=ActionAction, type=argstr,
-                        help='(DEPRECATED) action to be executed.')
+                        help=argparse.SUPPRESS)
     parser.add_argument('--begin', '-b', action='append', nargs='+', type=argstr,
                         help='action invoked before input files have been read.')
     parser.add_argument('--end', '-e', action='append', nargs='+', type=argstr,
