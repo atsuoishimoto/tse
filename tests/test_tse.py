@@ -108,18 +108,30 @@ class TestExec(_TestBase):
 
     def testModule(self):
         globals = self._run(
-            ["-m", "unicodedata", "-m", "datetime as ddd", "-s", "\\w+"], u"abc\n----\ndef\n")
+            ["-m", "unicodedata, bisect", "-m", "datetime as ddd", "-s", "\\w+"], u"abc\n----\ndef\n")
         import unicodedata
         import datetime
+        import bisect
         self.assertEqual(globals['unicodedata'], unicodedata)
         self.assertEqual(globals['ddd'], datetime)
+        self.assertEqual(globals['bisect'], bisect)
+
+    def testModuleError(self):
+        self.assertRaises(SystemExit, self._getParser().parse_args,
+                         ["-m", "unicodedata;", "-s", "\\w+"])
 
     def testModuleStar(self):
         globals = self._run(
-            ["-ms", "unicodedata", "-s", "\\w+"], u"abc\n----\ndef\n")
+            ["-ms", "unicodedata, bisect", "-s", "\\w+"], u"abc\n----\ndef\n")
         import unicodedata
         import datetime
+        import bisect
         self.assertEqual(globals['name'], unicodedata.name)
+        self.assertEqual(globals['bisect'], bisect.bisect)
+
+    def testModuleStarError(self):
+        self.assertRaises(SystemExit, self._getParser().parse_args,
+                         ["-ms", "unicodedata;", "-s", "\\w+"])
 
     def testScriptFile(self):
         fd, filename = tempfile.mkstemp()

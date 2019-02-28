@@ -21,6 +21,14 @@ SCRIPTFILE = os.path.join(os.path.expanduser(u"~"), ".tserc")
 
 PY3 = sys.version_info[0] == 3
 
+def _split_modules(modules):
+    modules = modules or ()
+    ret = []
+    for m in modules:
+        modules = [s for s in re.split(r"[,]+", m) if s]
+        ret.extend(modules)
+    return ret
+
 class Env:
     actions = ()
     begincode = None
@@ -62,8 +70,10 @@ class Env:
         if script_file:
             self.scriptfile = script_file
         self.inplace = inplace
-        self.imports = module or ()
-        self.imports_str = module_star or ()
+
+        self.imports = _split_modules(module)
+        self.imports_star = _split_modules(module_star)
+
         self.files = files or ()
 
     def _parse_statement(self, statement):
@@ -270,7 +280,7 @@ def run(env):
     for _import in env.imports:
         six.exec_("import %s" % _import, globals, locals)
 
-    for _import in env.imports_str:
+    for _import in env.imports_star:
         six.exec_("from %s import *" % _import, globals, locals)
 
     globals['E'] = E
@@ -381,6 +391,13 @@ def getargparser():
         def argstr(s):
             return str(s)
 
+    def modulestr(s):
+        s = str(s)
+        l = set(s) & set('\'";#()\r\n')
+        if l:
+            raise argparse.ArgumentTypeError("module name should not contain: %s" % ','.join(l))
+        return s
+
     parser = argparse.ArgumentParser(description=LOGAPPNAME)
     parser.add_argument(
         '--statement', '-s', action=StatementAction, nargs='+', type=argstr,
@@ -409,10 +426,10 @@ def getargparser():
     parser.add_argument(
         '--script-file', '-f', action=ScriptAction, type=argstr,
         help='specifies an alternative script file. the default script file is ~/.tserc.')
-    parser.add_argument('--module', '-m', action='append', type=argstr,
-                        help='module to be imported.')
-    parser.add_argument('--module-star', '-ms', action='append', type=argstr,
-                        help='module to be imported in form of "from modname import *".')
+    parser.add_argument('--module', '-m', action='append', type=modulestr,
+                        help='modules to be imported.')
+    parser.add_argument('--module-star', '-ms', action='append', type=modulestr,
+                        help='modules to be imported in form of "from modname import *".')
     parser.add_argument('FILE', nargs="*", type=argstr,
                         help='With no FILE, or when FILE is -, read standard input.')
     parser.add_argument('--version', action='version',
