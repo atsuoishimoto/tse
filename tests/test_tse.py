@@ -55,27 +55,27 @@ class TestArgs(_TestBase):
         result = self._getParser().parse_args(
             ["--statement", "arg1", "arg2",
              "--statement", "arg3", "arg4", "arg5"])
-        self.failUnlessEqual(result.statement,
+        self.assertEqual(result.statement,
                              [('statement', ["arg1", "arg2"]),
                               ('statement', ["arg3", "arg4", "arg5"])])
 
     def testStatementError(self):
-        self.failUnlessRaises(SystemExit, self._getParser().parse_args,
+        self.assertRaises(SystemExit, self._getParser().parse_args,
                               ["--statement"])
 
     def testPatternAction(self):
         result = self._getParser().parse_args(
             ["--pattern", "arg1",
              "--action", "arg2", "--action", "arg3"])
-        self.failUnlessEqual(result.statement,
+        self.assertEqual(result.statement,
                              [('pattern', "arg1"),
                               ('action', "arg2"),
                                  ('action', "arg3")])
 
     def testActionError(self):
-        self.failUnlessRaises(SystemExit, self._getParser().parse_args,
+        self.assertRaises(SystemExit, self._getParser().parse_args,
                               ["--action", "arg1", ])
-        self.failUnlessRaises(SystemExit, self._getParser().parse_args,
+        self.assertRaises(SystemExit, self._getParser().parse_args,
                               ["--action", "arg1", "--action", "arg2", ])
 
 
@@ -83,43 +83,43 @@ class TestExec(_TestBase):
 
     def testBegin(self):
         globals = self._run(["-b", "a=100", "b=200"], u"")
-        self.failUnlessEqual(globals['a'], 100)
-        self.failUnlessEqual(globals['b'], 200)
+        self.assertEqual(globals['a'], 100)
+        self.assertEqual(globals['b'], 200)
 
     def testEnd(self):
         globals = self._run(["-e", "a=100", "b=200"], u"")
-        self.failUnlessEqual(globals['a'], 100)
-        self.failUnlessEqual(globals['b'], 200)
+        self.assertEqual(globals['a'], 100)
+        self.assertEqual(globals['b'], 200)
 
     def testStatement(self):
         globals = self._run(
-            ["-b", "lines=[]", "-s", "\w+", "lines.append(L)"], u"abc\n----\ndef\n")
-        self.failUnlessEqual(globals['lines'], ["abc", "def"])
+            ["-b", "lines=[]", "-s", "\\w+", "lines.append(L)"], u"abc\n----\ndef\n")
+        self.assertEqual(globals['lines'], ["abc", "def"])
 
     def testAction(self):
         globals = self._run(
-            ["-b", "lines=[]", "-p", "\w+", "-a", "lines.append(L)"], u"abc\n----\ndef\n")
-        self.failUnlessEqual(globals['lines'], ["abc", "def"])
+            ["-b", "lines=[]", "-p", "\\w+", "-a", "lines.append(L)"], u"abc\n----\ndef\n")
+        self.assertEqual(globals['lines'], ["abc", "def"])
 
     def testIgnorecase(self):
         globals = self._run(
             ["-i", "-b" "lines=[]", "-p", "a", "-a", "lines.append(L)"], u"abc\nAbc\n123\n")
-        self.failUnlessEqual(globals['lines'], ["abc", "Abc"])
+        self.assertEqual(globals['lines'], ["abc", "Abc"])
 
     def testModule(self):
         globals = self._run(
-            ["-m", "unicodedata", "-m", "datetime as ddd", "-s", "\w+"], u"abc\n----\ndef\n")
+            ["-m", "unicodedata", "-m", "datetime as ddd", "-s", "\\w+"], u"abc\n----\ndef\n")
         import unicodedata
         import datetime
-        self.failUnlessEqual(globals['unicodedata'], unicodedata)
-        self.failUnlessEqual(globals['ddd'], datetime)
+        self.assertEqual(globals['unicodedata'], unicodedata)
+        self.assertEqual(globals['ddd'], datetime)
 
     def testModuleStar(self):
         globals = self._run(
-            ["-ms", "unicodedata", "-s", "\w+"], u"abc\n----\ndef\n")
+            ["-ms", "unicodedata", "-s", "\\w+"], u"abc\n----\ndef\n")
         import unicodedata
         import datetime
-        self.failUnlessEqual(globals['name'], unicodedata.name)
+        self.assertEqual(globals['name'], unicodedata.name)
 
     def testScriptFile(self):
         fd, filename = tempfile.mkstemp()
@@ -128,14 +128,14 @@ class TestExec(_TestBase):
             testfile.write("script_a=100")
             testfile.close()
 
-            globals = self._run(["-s", "\w+", "-f", filename], u"")
-            self.failUnlessEqual(globals['script_a'], 100)
+            globals = self._run(["-s", "\\w+", "-f", filename], u"")
+            self.assertEqual(globals['script_a'], 100)
         finally:
             os.unlink(filename)
 
     def testShell(self):
         globals = self._run(["-e", "a=E('echo abc')"], u"")
-        self.failUnlessEqual(globals['a'], 'abc\n')
+        self.assertEqual(globals['a'], 'abc\n')
 
 class TestEncoding(_TestBase):
 
@@ -143,7 +143,7 @@ class TestEncoding(_TestBase):
         globals = self._run(
             ["-s", ".*", "a=L", "-ie", "euc-jp"], u"\N{HIRAGANA LETTER A}",
             enc='euc-jp')
-        self.failUnlessEqual(globals['a'], u"\N{HIRAGANA LETTER A}")
+        self.assertEqual(globals['a'], u"\N{HIRAGANA LETTER A}")
 
     def testOutput(self):
         sys.stdout = out = StringIO()
@@ -155,7 +155,7 @@ class TestEncoding(_TestBase):
         ret = out.getvalue()[:-1]
         if six.PY3:
             ret = ret.encode('euc_jp')
-        self.failUnlessEqual(ret, u"\N{HIRAGANA LETTER I}".encode('euc-jp'))
+        self.assertEqual(ret, u"\N{HIRAGANA LETTER I}".encode('euc-jp'))
 
 
 class TestInplace(_TestBase):
@@ -165,9 +165,9 @@ class TestInplace(_TestBase):
             ["-s", ".*", "print(u'\N{HIRAGANA LETTER I}')",
              "--inplace", ".bak"],
             u"\N{HIRAGANA LETTER A}")
-        self.failUnlessEqual(open(self.testfilename, 'rb').read(),
+        self.assertEqual(open(self.testfilename, 'rb').read(),
                              u"\N{HIRAGANA LETTER I}\n".encode('utf-8'))
-        self.failUnlessEqual(open(self.testfilename + '.bak', 'rb').read(),
+        self.assertEqual(open(self.testfilename + '.bak', 'rb').read(),
                              u"\N{HIRAGANA LETTER A}".encode('utf-8'))
         os.unlink(self.testfilename + '.bak')
 
@@ -177,11 +177,11 @@ class TestSeparator(_TestBase):
     def testSeparator(self):
         globals = self._run(
             ["-s", ".*", "a=L0", "-F", "\\t"], u" A B C\tD\tE\tF ")
-        self.failUnlessEqual(globals['a'], [u" A B C", u"D", u"E", u"F "])
+        self.assertEqual(globals['a'], [u" A B C", u"D", u"E", u"F "])
 
         globals = self._run(
             ["-s", ".*", "a=L0"], u"   A B C\tD\tE\t F    ")
-        self.failUnlessEqual(globals['a'], [u"A", u"B", u"C", u"D", u"E", u"F"])
+        self.assertEqual(globals['a'], [u"A", u"B", u"C", u"D", u"E", u"F"])
 
 
 class TestIndent(_TestBase):
@@ -193,7 +193,7 @@ class TestIndent(_TestBase):
                   u"abcdefg")
 
         ret = out.getvalue()[:-1]
-        self.failUnlessEqual(ret, 'a\nbb\nc\ndd\ne\nff\ng')
+        self.assertEqual(ret, 'a\nbb\nc\ndd\ne\nff\ng')
 
     def testNewline(self):
         sys.stdout = out = StringIO()
@@ -202,7 +202,7 @@ class TestIndent(_TestBase):
                   u"abcdefg")
 
         ret = out.getvalue()[:-1]
-        self.failUnlessEqual(ret, '1\n2')
+        self.assertEqual(ret, '1\n2')
 
     def testMultiline(self):
         for opt in [["-s", ".*"], ["-b"], ["-e"]]:
@@ -211,7 +211,7 @@ class TestIndent(_TestBase):
                       u"abcdefg")
 
             ret = out.getvalue()
-            self.failUnlessEqual(ret, '0\n')
+            self.assertEqual(ret, '0\n')
 
 class TestString(_TestBase):
     def testString(self):
@@ -221,7 +221,7 @@ class TestString(_TestBase):
                   u"abcdefg")
 
         ret = out.getvalue()[:-1]
-        self.failUnlessEqual(ret, 'abcdefg"')
+        self.assertEqual(ret, 'abcdefg"')
 
     def testCommand(self):
         sys.stdout = out = StringIO()
@@ -230,7 +230,7 @@ class TestString(_TestBase):
                   u"abcdefg")
 
         ret = out.getvalue()[:-1]
-        self.failUnlessEqual(ret, '12345\n')
+        self.assertEqual(ret, '12345\n')
 
     def testfCommand(self):
         sys.stdout = out = StringIO()
@@ -239,7 +239,7 @@ class TestString(_TestBase):
                   u"abcdefg")
 
         ret = out.getvalue()[:-1]
-        self.failUnlessEqual(ret, 'abcdefg\n')
+        self.assertEqual(ret, 'abcdefg\n')
 
 
 if __name__ == '__main__':

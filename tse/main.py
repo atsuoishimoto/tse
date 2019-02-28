@@ -248,7 +248,7 @@ def run(env):
     script = ""
     if env.scriptfile:
         try:
-            with open(env.scriptfile, "rU") as f:
+            with open(env.scriptfile, "r") as f:
                 script = f.read()
         except IOError:
             pass
@@ -342,8 +342,9 @@ class StatementAction(argparse._AppendAction):
     def __call__(self, parser, namespace, values, option_string=None):
         self._checkValue(parser, namespace, values, option_string)
 
-        items = argparse._copy.copy(
-            argparse._ensure_value(namespace, 'statement', []))
+        import copy
+        items = copy.copy(
+            getattr(namespace, 'statement', None) or [])
         items.append((self.ARGTYPE, values))
         setattr(namespace, 'statement', items)
 
