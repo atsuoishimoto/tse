@@ -41,7 +41,7 @@ class _TestBase(unittest.TestCase):
         self.testfile = io.open(fd, 'w', encoding=enc)
         self.testfile.write(input)
         self.testfile.flush()
-        env = tse.main.Env(args.statement, args.begin, args.end,
+        env = tse.main.Env(args.execute, args.statement, args.begin, args.end,
                            args.input_encoding, args.output_encoding, args.module,
                            args.module_star, args.script_file, args.inplace, args.ignore_case,
                            args.field_separator, [self.testfilename])
@@ -90,6 +90,11 @@ class TestExec(_TestBase):
         globals = self._run(["-e", "a=100", "b=200"], u"")
         self.assertEqual(globals['a'], 100)
         self.assertEqual(globals['b'], 200)
+
+    def testExecute(self):
+        sys.stdout = out = StringIO()
+        globals = self._run(["-x", "a=100", "if a:", "{{print(a)"], u"")
+        self.assertEqual(sys.stdout.getvalue(), "100\n")
 
     def testStatement(self):
         globals = self._run(

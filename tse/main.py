@@ -30,6 +30,7 @@ def _split_modules(modules):
     return ret
 
 class Env:
+    exec_actions = ()
     actions = ()
     begincode = None
     endcode = None
@@ -38,19 +39,22 @@ class Env:
     encoding = locale.getpreferredencoding()
     scriptfile = SCRIPTFILE
 
-    def __init__(self, statement, begin, end, input_encoding, output_encoding,
+    def __init__(self, execute, statement, begin, end, input_encoding, output_encoding,
                  module, module_star, script_file, inplace, ignore_case, field_separator, files):
         self.ignore_case = ignore_case
         self.field_separator = field_separator
 
+        if execute:
+            self.exec_actions = self.build_code(False, (s for b in execute for s in b))
+
         if statement:
-            self.actions = [(self.build_re(r), self.build_code(c))
+            self.actions = [(self.build_re(r), self.build_code(True, c))
                             for (r, c) in self._parse_statement(statement)]
 
         if begin:
-            self.begincode = self.build_code(s for b in begin for s in b)
+            self.begincode = self.build_code(False, (s for b in begin for s in b))
         if end:
-            self.endcode = self.build_code(s for e in end for s in e)
+            self.endcode = self.build_code(False, (s for e in end for s in e))
 
         if input_encoding:
             enc, _, errors = (s.strip() for s in input_encoding.partition(':'))
@@ -127,7 +131,7 @@ class Env:
                     raise ValueError('Indent underflow')
             return '\n' + ' ' * self.indent
 
-    def build_code(self, codes):
+    def build_code(self, isbody, codes):
         converted = []
         indent = self.sub_indent()
         for code in codes:
@@ -175,7 +179,7 @@ class Env:
             converted.append(code)
 
         result = "\n".join(converted)
-        if not result.strip():
+        if isbody and (not result.strip()):
             result = 'print(L)'
         
         filename = u"<tse>"
@@ -289,6 +293,10 @@ def run(env):
         six.exec_(env.begincode, globals, locals)
 
     # todo: clean up followings
+    if env.exec_actions:
+        six.exec_(env.exec_actions, globals, locals)
+
+    org_stdout = sys.stdout
     if env.actions:
         if not env.inplace:
             if six.PY2:
@@ -330,6 +338,9 @@ def run(env):
                 if env.inplace:
                     shutil.move(f, '%s%s' % (f, env.inplace))
                     shutil.move(outfilename, f)
+
+    sys.stdout.flush()
+    sys.stdout = org_stdout
 
     if env.endcode:
         six.exec_(env.endcode, globals, locals)
@@ -406,6 +417,8 @@ def getargparser():
                         help=argparse.SUPPRESS)
     parser.add_argument('--action', '-a', action=ActionAction, type=argstr,
                         help=argparse.SUPPRESS)
+    parser.add_argument('--execute', '-x', action='append', nargs='+', type=argstr,
+                        help='execute script without reading files.')
     parser.add_argument('--begin', '-b', action='append', nargs='+', type=argstr,
                         help='action invoked before input files have been read.')
     parser.add_argument('--end', '-e', action='append', nargs='+', type=argstr,
@@ -441,11 +454,16 @@ def getargparser():
 def main():
     parser = getargparser()
     args = parser.parse_args()
+
+    if args.execute is not None:
+        if args.statement:
+            parser.error("--execute and --statement cannot be used together")
+
     if args.inplace and not args.FILE:
         parser.error("--inplace may not be used with stdin")
 
     env = Env(
-        args.statement, args.begin, args.end, args.input_encoding, args.output_encoding,
+        args.execute, args.statement, args.begin, args.end, args.input_encoding, args.output_encoding,
         args.module, args.module_star, args.script_file, args.inplace, args.ignore_case,
         args.field_separator, args.FILE)
     run(env)
