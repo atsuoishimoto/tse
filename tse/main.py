@@ -14,6 +14,7 @@ import shutil
 import re
 import collections
 import subprocess
+import pathlib
 
 SHORTAPPNAME = "tse"
 LOGAPPNAME = "Text Stream Editor in Python"
@@ -247,6 +248,7 @@ def _run_script(env, input, filename, globals, locals):
                 locals['N'] = len(locals['L0'])
                 locals['LINENO'] = lineno
                 locals['FILENAME'] = filename
+                locals['F'] = pathlib.Path(filename)
 
                 six.exec_(c, globals, locals)
 
@@ -278,6 +280,7 @@ def run(env):
 
     try:
         six.exec_("from pathlib import *", globals, locals)
+        globals['C'] = pathlib.Path()
     except ImportError:
         pass
 
