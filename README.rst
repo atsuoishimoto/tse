@@ -28,7 +28,7 @@ To get current directory ::
 To celebrate the Friday ::
 
     $ tse -ms datetime -x 'if 4==date.today().weekday():' \
-                          '{{P("Thank God It\'s Friday")}}'
+                          '{{P("Thank God It'\''s Friday")}}'
 
 
 \ 
