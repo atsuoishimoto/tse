@@ -7,9 +7,9 @@ def read(fname):
 
 setup(
     name="tse",
-    version="0.0.15",
+    version="0.1.0",
     author="Atsuo Ishimoto",
-    author_email="ishimoto@gembook.org",
+    author_email="atsuoishimoto@gmail.com",
     description="tse is an input stream editor in Python.",
     license="MIT",
     keywords="text filter",

@@ -449,7 +449,7 @@ def getargparser():
     parser.add_argument('FILE', nargs="*", type=argstr,
                         help='With no FILE, or when FILE is -, read standard input.')
     parser.add_argument('--version', action='version',
-                        version='%(prog)s 0.0.15')
+                        version='%(prog)s 0.1.0')
 
     return parser
 
@@ -469,6 +469,7 @@ def main():
         args.execute, args.statement, args.begin, args.end, args.input_encoding, args.output_encoding,
         args.module, args.module_star, args.script_file, args.inplace, args.ignore_case,
         args.field_separator, args.FILE)
+
     run(env)
 
 if __name__ == '__main__':

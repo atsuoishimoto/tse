@@ -1,3 +1,10 @@
+0.1.0 - 2018/3/2
+-------------------
+
+- Add --execute option to execute Python script.
+
+- Add C and F variable.
+
 0.0.15 - 2017/8/13
 -------------------
 
